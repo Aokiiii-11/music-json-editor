@@ -12,6 +12,7 @@ enum AppMode {
 
 const DEFAULT_API_SETTINGS: ApiSettings = {
   provider: ApiProvider.GEMINI,
+  geminiApiKey: '',
   customUrl: '',
   customMethod: 'POST',
   customHeaders: '{\n  "Content-Type": "application/json"\n}',

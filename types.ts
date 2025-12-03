@@ -48,6 +48,7 @@ export enum ApiProvider {
 
 export interface ApiSettings {
   provider: ApiProvider;
+  geminiApiKey?: string;
   customUrl: string;
   customMethod: 'POST' | 'GET';
   customHeaders: string; // Stored as JSON string

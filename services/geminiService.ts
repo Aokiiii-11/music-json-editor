@@ -1,8 +1,29 @@
 import { GoogleGenAI, GenerateContentResponse, Chat } from "@google/genai";
 import { ApiSettings, ApiProvider } from "../types";
 
-// Initialize Gemini Client
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const resolveApiKey = (apiSettings?: ApiSettings): string | undefined => {
+  const fromSettings = apiSettings?.geminiApiKey?.trim();
+  let stored: string | undefined;
+  try {
+    const raw = localStorage.getItem('bmje_api_settings');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed.geminiApiKey === 'string') {
+        stored = parsed.geminiApiKey.trim();
+      }
+    }
+  } catch {}
+  const envKey = (process.env.GEMINI_API_KEY as any) || (process.env.API_KEY as any);
+  return fromSettings || stored || envKey;
+};
+
+const getClient = (apiSettings?: ApiSettings): GoogleGenAI => {
+  const apiKey = resolveApiKey(apiSettings);
+  if (!apiKey) {
+    throw new Error("Gemini API key missing. Open Settings and enter your key or switch to Custom HTTP.");
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -116,8 +137,8 @@ export const translateJson = async (jsonData: any, customPrompt?: string, apiSet
       if (apiSettings && apiSettings.provider === ApiProvider.CUSTOM) {
         text = await callCustomApi(fullPromptForCustom, apiSettings);
       } else {
-        // Default Gemini
-        const response: GenerateContentResponse = await ai.models.generateContent({
+        const client = getClient(apiSettings);
+        const response: GenerateContentResponse = await client.models.generateContent({
           model: modelId,
           contents: geminiUserPrompt,
           config: {
@@ -162,8 +183,8 @@ export const translateJson = async (jsonData: any, customPrompt?: string, apiSet
 
 export const createChatSession = (contextData?: any): Chat => {
   const contextString = contextData ? JSON.stringify(contextData).substring(0, 10000) : "No specific file loaded.";
-  
-  return ai.chats.create({
+  const client = getClient();
+  return client.chats.create({
     model: 'gemini-3-pro-preview',
     config: {
       systemInstruction: `You are an intelligent assistant for a Music JSON Translation tool. 

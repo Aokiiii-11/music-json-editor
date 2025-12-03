@@ -245,17 +245,26 @@ const Settings: React.FC<SettingsProps> = ({
           </div>
 
           {localSettings.provider === ApiProvider.GEMINI ? (
-            <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4">
-               <div className="flex items-start gap-3">
-                  <span className="material-icons text-indigo-600 mt-0.5">info</span>
+            <div className="space-y-4">
+              <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <span className="material-icons text-indigo-600 mt-0.5">key</span>
                   <div>
-                    <p className="text-sm text-indigo-900 font-bold mb-1">Using Google Gemini (Official)</p>
-                    <p className="text-xs text-indigo-700 leading-relaxed">
-                        The application uses the <code>gemini-3-pro-preview</code> model via the official Google GenAI SDK. 
-                        The API key is securely loaded from your environment variables. No further configuration is needed.
-                    </p>
+                    <p className="text-sm text-indigo-900 font-bold mb-1">Gemini API Key</p>
+                    <p className="text-xs text-indigo-700 leading-relaxed">Enter your Google Gemini API key. It is stored locally in your browser.</p>
                   </div>
-               </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">API Key</label>
+                <input
+                  type="password"
+                  value={localSettings.geminiApiKey || ''}
+                  onChange={(e) => updateSetting('geminiApiKey', e.target.value)}
+                  placeholder="AIza..."
+                  className="w-full p-2 text-sm bg-slate-50 border border-slate-200 rounded focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
             </div>
           ) : (
             <div className="space-y-6 animate-fade-in">

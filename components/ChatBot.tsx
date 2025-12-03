@@ -17,16 +17,26 @@ const ChatBot: React.FC<ChatBotProps> = ({ contextData }) => {
 
   useEffect(() => {
     if (isOpen && !chatSessionRef.current) {
-      chatSessionRef.current = createChatSession(contextData);
-      // Add initial greeting
-      setMessages([
-        {
-          id: 'init',
-          role: 'model',
-          text: 'Hello! I am your music data assistant. Ask me anything about translation, terminology, or this file.',
-          timestamp: new Date()
-        }
-      ]);
+      try {
+        chatSessionRef.current = createChatSession(contextData);
+        setMessages([
+          {
+            id: 'init',
+            role: 'model',
+            text: 'Hello! I am your music data assistant. Ask me anything about translation, terminology, or this file.',
+            timestamp: new Date()
+          }
+        ]);
+      } catch (e: any) {
+        setMessages([
+          {
+            id: 'init_err',
+            role: 'model',
+            text: e?.message || 'Gemini is unavailable. Open Settings to provide API key or switch provider.',
+            timestamp: new Date()
+          }
+        ]);
+      }
     } else if (isOpen && chatSessionRef.current && contextData) {
         // Ideally we would update the context here if the session allowed dynamic system instruction updates,
         // but for now we assume the session starts fresh or we just continue. 
