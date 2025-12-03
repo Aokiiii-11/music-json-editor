@@ -408,6 +408,13 @@ const DictionaryBlock: React.FC<{
 
 const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange }) => {
   const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set([0]));
+  const sections: SectionDimension[] = data.section_dimension ?? [];
+  const global: GlobalDimension = data.global_dimension ?? {
+    description: '',
+    fact_keywords: {},
+    highlights: {},
+    lowlights: {}
+  };
 
   const toggleSection = (index: number) => {
     const newSet = new Set(expandedSections);
@@ -419,12 +426,12 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange }) => {
   const updateGlobal = (key: keyof GlobalDimension, val: any) => {
     onChange({
       ...data,
-      global_dimension: { ...data.global_dimension, [key]: val }
+      global_dimension: { ...global, [key]: val }
     });
   };
 
   const updateSection = (index: number, key: keyof SectionDimension, val: any) => {
-    const newSections = [...data.section_dimension];
+    const newSections = [...sections];
     newSections[index] = { ...newSections[index], [key]: val };
     onChange({ ...data, section_dimension: newSections });
   };
@@ -477,7 +484,7 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange }) => {
             {/* Timeline Group */}
             <div>
               <h4 className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Timeline Analysis</h4>
-              {data.section_dimension.map((sec, idx) => (
+              {sections.map((sec, idx) => (
                  <button
                    key={idx}
                    onClick={() => scrollTo(`section-${idx}`, idx)}
@@ -511,7 +518,7 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange }) => {
             <div className="mb-6" id="global-desc">
               <TranslationUnit 
                 label="Song Description" 
-                value={data.global_dimension.description} 
+                value={global.description} 
                 onChange={(val) => updateGlobal('description', val)} 
                 multiline 
               />
@@ -520,7 +527,7 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange }) => {
             <div id="global-facts">
                 <DictionaryBlock 
                 title="Fact Keywords" 
-                data={data.global_dimension.fact_keywords}
+                data={global.fact_keywords}
                 onChange={(val) => updateGlobal('fact_keywords', val)}
                 />
             </div>
@@ -528,7 +535,7 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange }) => {
             <div id="global-high">
                 <DictionaryBlock 
                 title="Creative Highlights" 
-                data={data.global_dimension.highlights}
+                data={global.highlights}
                 onChange={(val) => updateGlobal('highlights', val)}
                 important
                 />
@@ -537,7 +544,7 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange }) => {
             <div id="global-low">
                 <DictionaryBlock 
                 title="Improvement Areas (Lowlights)" 
-                data={data.global_dimension.lowlights}
+                data={global.lowlights}
                 onChange={(val) => updateGlobal('lowlights', val)}
                 />
             </div>
@@ -548,7 +555,7 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange }) => {
         <div className="space-y-4">
           <h3 className="text-slate-500 font-bold uppercase text-xs tracking-wider px-2">Timeline Analysis</h3>
           
-          {data.section_dimension.map((section, idx) => (
+          {sections.map((section, idx) => (
             <div 
               key={idx} 
               id={`section-${idx}`}

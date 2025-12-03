@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { MusicData, ApiSettings, ApiProvider } from './types';
 import JsonEditor from './components/JsonEditor';
 import Settings from './components/Settings';
@@ -51,6 +51,10 @@ const App: React.FC = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
 
+  const [isRawCollapsed, setIsRawCollapsed] = useState(false);
+  const [rawHeight, setRawHeight] = useState<number>(300);
+  const rawHeightRef = useRef(rawHeight);
+
   // Load Settings on Mount
   useEffect(() => {
     const storedApi = localStorage.getItem('bmje_api_settings');
@@ -66,7 +70,24 @@ const App: React.FC = () => {
     if (storedPrompt) {
       setCustomPrompt(storedPrompt);
     }
+
+    const storedCollapsed = localStorage.getItem('bmje_raw_collapsed');
+    if (storedCollapsed === '1' || storedCollapsed === 'true') {
+      setIsRawCollapsed(true);
+    }
+    const storedHeight = localStorage.getItem('bmje_raw_height');
+    const defaultHeight = Math.round(window.innerHeight * 0.35);
+    if (storedHeight) {
+      const h = parseInt(storedHeight, 10);
+      setRawHeight(Number.isFinite(h) ? Math.max(100, h) : defaultHeight);
+    } else {
+      setRawHeight(defaultHeight);
+    }
   }, []);
+
+  useEffect(() => {
+    rawHeightRef.current = rawHeight;
+  }, [rawHeight]);
 
   // Save Settings Handlers
   const handleSaveApiSettings = (settings: ApiSettings) => {
@@ -207,6 +228,37 @@ const App: React.FC = () => {
     }
   };
 
+  const toggleRawPane = () => {
+    const next = !isRawCollapsed;
+    setIsRawCollapsed(next);
+    localStorage.setItem('bmje_raw_collapsed', next ? '1' : '0');
+  };
+
+  const beginResize = (clientY: number) => {
+    const startY = clientY;
+    const startHeight = rawHeightRef.current;
+    const minH = 100;
+    const onMove = (y: number) => {
+      const delta = y - startY;
+      const next = Math.max(minH, startHeight + delta);
+      setIsRawCollapsed(false);
+      setRawHeight(next);
+    };
+    const onMouseMove = (e: MouseEvent) => onMove(e.clientY);
+    const onTouchMove = (e: TouchEvent) => onMove(e.touches[0].clientY);
+    const onUp = () => {
+      localStorage.setItem('bmje_raw_height', String(rawHeightRef.current));
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('touchend', onUp);
+    };
+    window.addEventListener('mousemove', onMouseMove, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener('mouseup', onUp, { passive: true });
+    window.addEventListener('touchend', onUp, { passive: true });
+  };
+
   // --- RENDER HELPERS ---
 
   const renderContent = () => {
@@ -225,7 +277,7 @@ const App: React.FC = () => {
     return (
       <div className="flex flex-col h-full overflow-hidden">
          {/* --- TOP PANE: RAW JSON (Persistent) --- */}
-         <div className="h-[35%] flex flex-col bg-slate-900 border-b-4 border-indigo-500 shadow-md flex-shrink-0 z-20">
+         <div className="flex flex-col bg-slate-900 border-b-4 border-indigo-500 shadow-md flex-shrink-0 z-20 overflow-hidden transition-[height] duration-200 ease-in-out" style={{ height: isRawCollapsed ? 8 : rawHeight }}>
             {/* Toolbar */}
             <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700">
                <div className="flex items-center gap-3">
@@ -246,6 +298,15 @@ const App: React.FC = () => {
                     <span className="material-icons text-sm">auto_fix_high</span>
                     Format & Parse
                   </button>
+                  <button
+                    onClick={toggleRawPane}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-semibold border transition-colors ${isRawCollapsed ? 'bg-indigo-600 text-white border-indigo-500 hover:bg-indigo-500' : 'bg-slate-700 text-slate-200 border-slate-600 hover:bg-indigo-600 hover:text-white'}`}
+                    title={isRawCollapsed ? '展开' : '收起'}
+                    aria-expanded={!isRawCollapsed}
+                  >
+                    <span className="material-icons text-base">{isRawCollapsed ? 'expand_more' : 'expand_less'}</span>
+                    JSON
+                  </button>
                   {lastUpdated && (
                     <span className="flex items-center gap-1 animate-fade-in pl-2 border-l border-slate-700">
                        <span className="material-icons text-[12px]">update</span>
@@ -264,6 +325,14 @@ const App: React.FC = () => {
                 className="w-full h-full bg-slate-900 text-slate-300 font-mono text-xs p-4 resize-none focus:outline-none focus:ring-inset focus:ring-2 focus:ring-indigo-500/50 leading-relaxed"
                 spellCheck={false}
               />
+              <div
+                className="absolute bottom-0 left-0 right-0 h-6 bg-indigo-500/80 hover:bg-indigo-500 cursor-row-resize flex items-center justify-center z-10"
+                onMouseDown={(e) => beginResize(e.clientY)}
+                onTouchStart={(e) => beginResize(e.touches[0].clientY)}
+                aria-label="Drag to resize"
+              >
+                <div className="w-12 h-[2px] bg-white/90 rounded"></div>
+              </div>
             </div>
          </div>
 
@@ -276,6 +345,15 @@ const App: React.FC = () => {
                       {data ? 'Active' : 'Waiting for JSON...'}
                     </span>
                 </div>
+                <button
+                  onClick={toggleRawPane}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold border transition-colors ${isRawCollapsed ? 'bg-indigo-600 text-white border-indigo-500 hover:bg-indigo-500' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'}`}
+                  title={isRawCollapsed ? '展开原始 JSON' : '收起原始 JSON'}
+                  aria-expanded={!isRawCollapsed}
+                >
+                  <span className="material-icons text-base">{isRawCollapsed ? 'expand_more' : 'expand_less'}</span>
+                  JSON Pane
+                </button>
             </div>
 
             <div className="flex items-center gap-2">
