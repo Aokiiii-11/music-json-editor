@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { MusicData, ApiSettings, ApiProvider } from './types';
 import JsonEditor from './components/JsonEditor';
 import Settings from './components/Settings';
-import ChatBot from './components/ChatBot';
 import { translateJson } from './services/geminiService';
 
 enum AppMode {
@@ -443,7 +442,6 @@ const App: React.FC = () => {
     <div className="flex h-screen bg-slate-50">
       <main className="flex-1 overflow-hidden relative">
         {renderContent()}
-        {mode === AppMode.EDITOR && data && <ChatBot contextData={data} />}
       </main>
     </div>
   );
