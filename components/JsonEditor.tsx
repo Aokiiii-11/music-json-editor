@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MusicData, GlobalDimension, SectionDimension } from '../types';
+import { TranslationMap } from '../utils/matcher';
+import { buildPathKey } from '../utils/jsonPath';
 
 interface JsonEditorProps {
   data: MusicData;
   onChange: (newData: MusicData) => void;
+  translationMap?: TranslationMap;
 }
 
 // --- UTILITIES FOR SENTENCE SPLITTING ---
@@ -115,13 +118,14 @@ interface TranslationUnitProps {
   multiline?: boolean;
   isImportant?: boolean;
   id?: string;
+  referenceCn?: string;
 }
 
 /**
  * The core component for editing a Bilingual pair.
  * Handles the "En | Cn" logic, View/Edit toggle, Hover sync, Selection sync, and Segmented Editing.
  */
-const TranslationUnit: React.FC<TranslationUnitProps> = ({ label, value, onChange, multiline, isImportant, id }) => {
+const TranslationUnit: React.FC<TranslationUnitProps> = ({ label, value, onChange, multiline, isImportant, id, referenceCn }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [segmentMode, setSegmentMode] = useState(false); // Toggle for Segmented Editor
   
@@ -133,6 +137,7 @@ const TranslationUnit: React.FC<TranslationUnitProps> = ({ label, value, onChang
   const parts = safeValue.split('|');
   const en = parts[0]?.trim() || '';
   const cn = parts.length > 1 ? parts.slice(1).join('|').trim() : '';
+  const refCn = referenceCn || '';
 
   // Local state for editing mode
   const [editEn, setEditEn] = useState(en);
@@ -202,7 +207,7 @@ const TranslationUnit: React.FC<TranslationUnitProps> = ({ label, value, onChang
   const handleSourceSelection = (indices: number[]) => setCrossHighlightIndices(indices);
   const handleTargetSelection = (indices: number[]) => setCrossHighlightIndices(indices);
 
-  const isMissingTranslation = en && !cn;
+  const isMissingTranslation = en && !cn && !refCn;
   
   // Prepare segments for rendering in Segment Mode
   const segmentsEn = useMemo(() => getSegments(editEn), [editEn]);
@@ -321,14 +326,14 @@ const TranslationUnit: React.FC<TranslationUnitProps> = ({ label, value, onChang
                     />
                   </div>
                   <div className="flex-1 p-2">
-                    <div className="text-[10px] text-indigo-300 font-mono mb-1 uppercase">Chinese Translation</div>
+                    <div className="text-[10px] text-indigo-300 font-mono mb-1 uppercase">Chinese Translation (Reference)</div>
                     <textarea
-                      className={`w-full bg-transparent border-none outline-none text-sm text-slate-800 placeholder-indigo-100 resize-none h-full min-h-[80px] transition-opacity ${!editEn ? 'opacity-30' : 'opacity-100'}`}
-                      value={editCn}
-                      onChange={(e) => setEditCn(e.target.value)}
-                      placeholder="Translation..."
+                      className={`w-full bg-transparent border-none outline-none text-sm text-slate-800 placeholder-indigo-100 resize-none h-full min-h-[80px]`}
+                      value={refCn || editCn}
+                      onChange={() => {}}
+                      placeholder="Translation (reference only)"
                       rows={multiline ? 6 : 2}
-                      disabled={!editEn}
+                      disabled
                     />
                   </div>
                </div>
@@ -354,9 +359,9 @@ const TranslationUnit: React.FC<TranslationUnitProps> = ({ label, value, onChang
 
              {/* Right Column (Target) */}
              <div className="flex-1 p-4 group-hover:bg-indigo-50/5 transition-colors">
-                {cn ? (
+                {(cn || refCn) ? (
                   <InteractiveText 
-                    text={cn} 
+                    text={cn || refCn} 
                     isSource={false} 
                     hoverIndex={hoverIndex} 
                     onHover={setHoverIndex}
@@ -381,7 +386,9 @@ const DictionaryBlock: React.FC<{
   onChange: (newData: Record<string, string>) => void;
   title: string;
   important?: boolean;
-}> = ({ data, onChange, title, important }) => {
+  pathPrefix: string;
+  translationMap?: TranslationMap;
+  }[]> = ({ data, onChange, title, important, pathPrefix, translationMap }) => {
   if (!data) return null;
 
   return (
@@ -397,6 +404,7 @@ const DictionaryBlock: React.FC<{
             value={value}
             onChange={(val) => onChange({ ...data, [key]: val })}
             isImportant={important}
+            referenceCn={(translationMap && translationMap[`${pathPrefix}.${key}`]) || ''}
           />
         ))}
       </div>
@@ -406,7 +414,7 @@ const DictionaryBlock: React.FC<{
 
 // --- MAIN COMPONENT ---
 
-const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange }) => {
+const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap }) => {
   const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set([0]));
   const sections: SectionDimension[] = data.section_dimension ?? [];
   const global: GlobalDimension = data.global_dimension ?? {
@@ -415,6 +423,9 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange }) => {
     highlights: {},
     lowlights: {}
   };
+
+  const translationMapRef = useRef(translationMap);
+  useEffect(() => { translationMapRef.current = translationMap; }, [translationMap]);
 
   const toggleSection = (index: number) => {
     const newSet = new Set(expandedSections);
@@ -521,6 +532,7 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange }) => {
                 value={global.description} 
                 onChange={(val) => updateGlobal('description', val)} 
                 multiline 
+                referenceCn={(translationMapRef.current && translationMapRef.current['global_dimension.description']) || ''}
               />
             </div>
 
@@ -529,6 +541,8 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange }) => {
                 title="Fact Keywords" 
                 data={global.fact_keywords}
                 onChange={(val) => updateGlobal('fact_keywords', val)}
+                pathPrefix={'global_dimension.fact_keywords'}
+                translationMap={translationMapRef.current || undefined}
                 />
             </div>
 
@@ -538,6 +552,8 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange }) => {
                 data={global.highlights}
                 onChange={(val) => updateGlobal('highlights', val)}
                 important
+                pathPrefix={'global_dimension.highlights'}
+                translationMap={translationMapRef.current || undefined}
                 />
             </div>
 
@@ -546,6 +562,8 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange }) => {
                 title="Improvement Areas (Lowlights)" 
                 data={global.lowlights}
                 onChange={(val) => updateGlobal('lowlights', val)}
+                pathPrefix={'global_dimension.lowlights'}
+                translationMap={translationMapRef.current || undefined}
                 />
             </div>
           </div>
@@ -592,12 +610,14 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange }) => {
                             value={section.description}
                             onChange={(val) => updateSection(idx, 'description', val)}
                             multiline
+                            referenceCn={(translationMapRef.current && translationMapRef.current[`section_dimension[${idx}].description`]) || ''}
                         />
                         <TranslationUnit 
                             label="Lyrics / Content"
                             value={section.lyrics}
                             onChange={(val) => updateSection(idx, 'lyrics', val)}
                             multiline
+                            referenceCn={(translationMapRef.current && translationMapRef.current[`section_dimension[${idx}].lyrics`]) || ''}
                         />
                       </div>
 
@@ -605,6 +625,8 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange }) => {
                         title="Technical Keywords"
                         data={section.keywords}
                         onChange={(val) => updateSection(idx, 'keywords', val)}
+                        pathPrefix={`section_dimension[${idx}].keywords`}
+                        translationMap={translationMapRef.current || undefined}
                       />
 
                       <DictionaryBlock 
@@ -612,12 +634,16 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange }) => {
                         data={section.highlights}
                         onChange={(val) => updateSection(idx, 'highlights', val)}
                         important
+                        pathPrefix={`section_dimension[${idx}].highlights`}
+                        translationMap={translationMapRef.current || undefined}
                       />
                       
                       <DictionaryBlock 
                         title="Lowlights"
                         data={section.lowlights}
                         onChange={(val) => updateSection(idx, 'lowlights', val)}
+                        pathPrefix={`section_dimension[${idx}].lowlights`}
+                        translationMap={translationMapRef.current || undefined}
                       />
                   </div>
                 )}

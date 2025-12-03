@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { MusicData, ApiSettings, ApiProvider } from './types';
 import JsonEditor from './components/JsonEditor';
+import TranslationJsonInput from './components/TranslationJsonInput';
+import { collectStringPaths, getByPath } from './utils/jsonPath';
+import { buildTranslationMapFromJson, diagnoseMatch, TranslationMap } from './utils/matcher';
 import Settings from './components/Settings';
 import ChatBot from './components/ChatBot';
 import { translateJson } from './services/geminiService';
@@ -54,6 +57,57 @@ const App: React.FC = () => {
   const [isRawCollapsed, setIsRawCollapsed] = useState(false);
   const [rawHeight, setRawHeight] = useState<number>(300);
   const rawHeightRef = useRef(rawHeight);
+  const [isTransCollapsed, setIsTransCollapsed] = useState(false);
+  const [transHeight, setTransHeight] = useState<number>(180);
+  const transHeightRef = useRef(transHeight);
+
+  // Translation (Reference) State
+  const [translationJsonText, setTranslationJsonText] = useState('');
+  const [translationMap, setTranslationMap] = useState<TranslationMap>({});
+  const [translationDiag, setTranslationDiag] = useState<ReturnType<typeof diagnoseMatch> | null>(null);
+
+  const extractBilingual = (root: any): { original: any; map: TranslationMap } => {
+    const map: TranslationMap = {};
+    const walk = (node: any): any => {
+      if (typeof node === 'string') {
+        const parts = node.split('|');
+        if (parts.length > 1) {
+          const en = parts[0].trim();
+          const cn = parts.slice(1).join('|').trim();
+          return { en, cn } as any; // marker handled in parent
+        }
+        return node;
+      }
+      if (Array.isArray(node)) {
+        return node.map(walk).map((v) => (typeof v === 'object' && v && 'en' in v ? (v as any).en : v));
+      }
+      if (node && typeof node === 'object') {
+        const out: any = {};
+        for (const k of Object.keys(node)) {
+          const v = walk(node[k]);
+          if (typeof v === 'object' && v && 'en' in v) {
+            out[k] = (v as any).en;
+          } else {
+            out[k] = v;
+          }
+        }
+        return out;
+      }
+      return node;
+    };
+    // Build original-only
+    const original = walk(root);
+    // Build map from original + root by re-traversal for strings with pipes
+    const paths = collectStringPaths(root);
+    for (const p of paths) {
+      const val = getByPath(root, p);
+      if (typeof val === 'string') {
+        const parts = val.split('|');
+        if (parts.length > 1) map[p] = parts.slice(1).join('|').trim();
+      }
+    }
+    return { original, map };
+  };
 
   // Load Settings on Mount
   useEffect(() => {
@@ -83,11 +137,27 @@ const App: React.FC = () => {
     } else {
       setRawHeight(defaultHeight);
     }
+
+    const storedTransCollapsed = localStorage.getItem('bmje_trans_collapsed');
+    if (storedTransCollapsed === '1' || storedTransCollapsed === 'true') {
+      setIsTransCollapsed(true);
+    }
+    const storedTransHeight = localStorage.getItem('bmje_trans_height');
+    const defaultTransHeight = Math.round(window.innerHeight * 0.25);
+    if (storedTransHeight) {
+      const th = parseInt(storedTransHeight, 10);
+      setTransHeight(Number.isFinite(th) ? Math.max(120, th) : defaultTransHeight);
+    } else {
+      setTransHeight(defaultTransHeight);
+    }
   }, []);
 
   useEffect(() => {
     rawHeightRef.current = rawHeight;
   }, [rawHeight]);
+  useEffect(() => {
+    transHeightRef.current = transHeight;
+  }, [transHeight]);
 
   // Save Settings Handlers
   const handleSaveApiSettings = (settings: ApiSettings) => {
@@ -115,7 +185,10 @@ const App: React.FC = () => {
 
     try {
       const parsed = JSON.parse(newText);
-      setData(parsed);
+      const { original, map } = extractBilingual(parsed);
+      setData(original);
+      setTranslationMap(map);
+      setTranslationDiag(diagnoseMatch(original, map && Object.keys(map).length ? parsed : original));
       setParseError(null);
       setLastUpdated(new Date());
     } catch (err) {
@@ -138,8 +211,63 @@ const App: React.FC = () => {
     if (!data) return;
     setIsTranslating(true);
     try {
-      const translated = await translateJson(data, customPrompt, apiSettings);
-      handleVisualChange(translated);
+      const bilingual = await translateJson(data, customPrompt, apiSettings);
+      // Build Chinese-only JSON based on bilingual strings
+      const paths = collectStringPaths(bilingual);
+      const chineseOnly: any = Array.isArray(bilingual) ? [] : {};
+      const cloneStack: { src: any; dst: any }[] = [{ src: bilingual, dst: chineseOnly }];
+      while (cloneStack.length) {
+        const { src, dst } = cloneStack.pop()!;
+        if (typeof src === 'string') {
+          const parts = String(src).split('|');
+          const cn = parts.length > 1 ? parts.slice(1).join('|').trim() : '';
+          // assign handled by parent branch
+        } else if (Array.isArray(src)) {
+          const arr: any[] = new Array(src.length);
+          for (let i = 0; i < src.length; i++) {
+            const s = src[i];
+            if (typeof s === 'string') {
+              const parts = String(s).split('|');
+              arr[i] = parts.length > 1 ? parts.slice(1).join('|').trim() : '';
+            } else if (Array.isArray(s)) {
+              const child: any[] = [];
+              arr[i] = child;
+              cloneStack.push({ src: s, dst: child });
+            } else if (s && typeof s === 'object') {
+              const child: any = {};
+              arr[i] = child;
+              cloneStack.push({ src: s, dst: child });
+            } else {
+              arr[i] = s;
+            }
+          }
+          Object.assign(dst, arr);
+        } else if (src && typeof src === 'object') {
+          for (const k of Object.keys(src)) {
+            const s = src[k];
+            if (typeof s === 'string') {
+              const parts = String(s).split('|');
+              (dst as any)[k] = parts.length > 1 ? parts.slice(1).join('|').trim() : '';
+            } else if (Array.isArray(s)) {
+              const child: any[] = [];
+              (dst as any)[k] = child;
+              cloneStack.push({ src: s, dst: child });
+            } else if (s && typeof s === 'object') {
+              const child: any = {};
+              (dst as any)[k] = child;
+              cloneStack.push({ src: s, dst: child });
+            } else {
+              (dst as any)[k] = s;
+            }
+          }
+        }
+      }
+      const map = buildTranslationMapFromJson(chineseOnly);
+      const diagnostics = diagnoseMatch(data, chineseOnly);
+      setTranslationMap(map);
+      setTranslationDiag(diagnostics);
+      setTranslationJsonText(JSON.stringify(chineseOnly, null, 2));
+      alert('Translation generated as reference. Original JSON unchanged.');
     } catch (error: any) {
       console.error("Translation error:", error);
       alert(`Translation failed: ${error?.message || "Unknown error"}. Check console for details.`);
@@ -148,22 +276,7 @@ const App: React.FC = () => {
     }
   };
 
-  // 4. Clean Data Helper (Strips Chinese)
-  const cleanData = (obj: any): any => {
-    if (typeof obj === 'string') {
-      // Split by pipe and take the first part (Original)
-      return obj.split('|')[0].trim();
-    } else if (Array.isArray(obj)) {
-      return obj.map(cleanData);
-    } else if (typeof obj === 'object' && obj !== null) {
-      const newObj: any = {};
-      for (const key in obj) {
-        newObj[key] = cleanData(obj[key]);
-      }
-      return newObj;
-    }
-    return obj;
-  };
+  // Deprecated cleanData removed: we now export original JSON directly
 
   // 5. Export
   const handleExport = (clean: boolean) => {
@@ -184,14 +297,14 @@ const App: React.FC = () => {
         }
     }
     
-    const defaultName = clean ? 'clean_music_data' : 'bilingual_music_data';
+    const defaultName = clean ? 'clean_music_data' : 'original_music_data';
     const userFilename = window.prompt("Enter filename for export (without extension):", defaultName);
     if (userFilename === null) return;
     const baseName = userFilename.trim() || defaultName;
     const filename = baseName.endsWith('.json') ? baseName : `${baseName}.json`;
     
     try {
-        const dataToExport = clean ? cleanData(exportData) : exportData;
+        const dataToExport = exportData;
         const jsonString = JSON.stringify(dataToExport, null, 2);
         const blob = new Blob([jsonString], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -217,10 +330,12 @@ const App: React.FC = () => {
     if (!jsonText.trim()) return;
     try {
       const parsed = JSON.parse(jsonText);
+      const { original, map } = extractBilingual(parsed);
       // Update text to be pretty
-      setJsonText(JSON.stringify(parsed, null, 2));
+      setJsonText(JSON.stringify(original, null, 2));
       // Ensure data is set
-      setData(parsed);
+      setData(original);
+      setTranslationMap(map);
       setParseError(null);
       setLastUpdated(new Date());
     } catch (e) {
@@ -232,6 +347,11 @@ const App: React.FC = () => {
     const next = !isRawCollapsed;
     setIsRawCollapsed(next);
     localStorage.setItem('bmje_raw_collapsed', next ? '1' : '0');
+  };
+  const toggleTransPane = () => {
+    const next = !isTransCollapsed;
+    setIsTransCollapsed(next);
+    localStorage.setItem('bmje_trans_collapsed', next ? '1' : '0');
   };
 
   const beginResize = (clientY: number) => {
@@ -248,6 +368,30 @@ const App: React.FC = () => {
     const onTouchMove = (e: TouchEvent) => onMove(e.touches[0].clientY);
     const onUp = () => {
       localStorage.setItem('bmje_raw_height', String(rawHeightRef.current));
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('touchend', onUp);
+    };
+    window.addEventListener('mousemove', onMouseMove, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener('mouseup', onUp, { passive: true });
+    window.addEventListener('touchend', onUp, { passive: true });
+  };
+  const beginResizeTrans = (clientY: number) => {
+    const startY = clientY;
+    const startHeight = transHeightRef.current;
+    const minH = 120;
+    const onMove = (y: number) => {
+      const delta = y - startY;
+      const next = Math.max(minH, startHeight + delta);
+      setIsTransCollapsed(false);
+      setTransHeight(next);
+    };
+    const onMouseMove = (e: MouseEvent) => onMove(e.clientY);
+    const onTouchMove = (e: TouchEvent) => onMove(e.touches[0].clientY);
+    const onUp = () => {
+      localStorage.setItem('bmje_trans_height', String(transHeightRef.current));
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('touchmove', onTouchMove);
       window.removeEventListener('mouseup', onUp);
@@ -326,15 +470,29 @@ const App: React.FC = () => {
                 spellCheck={false}
               />
               <div
-                className="absolute bottom-0 left-0 right-0 h-6 bg-indigo-500/80 hover:bg-indigo-500 cursor-row-resize flex items-center justify-center z-10"
+                className="absolute bottom-0 left-0 right-0 h-2 bg-indigo-500/80 hover:bg-indigo-500 cursor-row-resize flex items-center justify-center z-10"
                 onMouseDown={(e) => beginResize(e.clientY)}
                 onTouchStart={(e) => beginResize(e.touches[0].clientY)}
                 aria-label="Drag to resize"
               >
-                <div className="w-12 h-[2px] bg-white/90 rounded"></div>
+                <div className="w-[48px] h-px bg-white/90 rounded"></div>
               </div>
             </div>
          </div>
+
+         {/* --- TRANSLATION INPUT: REFERENCE JSON --- */}
+         <TranslationJsonInput
+            originalData={data}
+            onLoad={({ map, rawText, diagnostics }) => {
+              setTranslationMap(map);
+              setTranslationJsonText(rawText);
+              setTranslationDiag(diagnostics);
+            }}
+            collapsed={isTransCollapsed}
+            height={transHeight}
+            onToggle={toggleTransPane}
+            onBeginResize={beginResizeTrans}
+         />
 
          {/* --- MIDDLE BAR: ACTIONS --- */}
          <div className="bg-white border-b border-slate-200 px-6 py-2 flex items-center justify-between shadow-sm z-10 flex-shrink-0 h-16">
@@ -353,6 +511,15 @@ const App: React.FC = () => {
                 >
                   <span className="material-icons text-base">{isRawCollapsed ? 'expand_more' : 'expand_less'}</span>
                   JSON Pane
+                </button>
+                <button
+                  onClick={toggleTransPane}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold border transition-colors ${isTransCollapsed ? 'bg-indigo-600 text-white border-indigo-500 hover:bg-indigo-500' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'}`}
+                  title={isTransCollapsed ? '展开译文 JSON' : '收起译文 JSON'}
+                  aria-expanded={!isTransCollapsed}
+                >
+                  <span className="material-icons text-base">{isTransCollapsed ? 'expand_more' : 'expand_less'}</span>
+                  Translation Pane
                 </button>
             </div>
 
@@ -388,28 +555,63 @@ const App: React.FC = () => {
                     onClick={() => handleExport(false)}
                     disabled={isExporting || (!data && !jsonText.trim())}
                     className="flex items-center gap-2 px-4 py-1.5 bg-white border border-slate-300 text-slate-700 rounded-lg font-medium text-xs hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50"
-                    title="Save current state (Bilingual)"
+                    title="Export current original JSON"
                 >
                     {isExporting ? (
                       <span className="material-icons text-sm animate-spin">refresh</span>
                     ) : (
                       <span className="material-icons text-sm">save</span>
                     )}
-                    {isExporting ? 'Exporting…' : 'Save Progress'}
+                    {isExporting ? 'Exporting…' : 'Export Original'}
                 </button>
 
                 <button 
                     onClick={() => handleExport(true)}
                     disabled={isExporting || (!data && !jsonText.trim())}
                     className="flex items-center gap-2 px-4 py-1.5 bg-slate-800 text-white rounded-lg font-medium text-xs hover:bg-slate-700 transition-colors shadow-sm disabled:opacity-50"
-                    title="Removes translations and keeps original structure"
+                    title="Export original JSON (same content)"
                 >
                     {isExporting ? (
                       <span className="material-icons text-sm animate-spin">refresh</span>
                     ) : (
                       <span className="material-icons text-sm">download</span>
                     )}
-                    {isExporting ? 'Exporting…' : 'Export Original (Clean)'}
+                    {isExporting ? 'Exporting…' : 'Export Original (Same)'}
+                </button>
+
+                <button 
+                    onClick={() => {
+                      if (!translationJsonText.trim()) {
+                        alert('No translation JSON loaded. Paste or generate it first.');
+                        return;
+                      }
+                      if (translationDiag && translationDiag.missingPaths.length > 0) {
+                        const proceed = window.confirm(`Translation has ${translationDiag.missingPaths.length} missing paths. Export anyway?`);
+                        if (!proceed) return;
+                      }
+                      try {
+                        const filename = window.prompt('Enter filename for translation (without extension):', 'translation_reference') || 'translation_reference';
+                        const baseName = filename.trim();
+                        const finalName = baseName.endsWith('.json') ? baseName : `${baseName}.json`;
+                        const blob = new Blob([translationJsonText], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = finalName;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                        alert('Exported: ' + finalName);
+                      } catch (e) {
+                        alert('Export translation failed');
+                      }
+                    }}
+                    className="flex items-center gap-2 px-4 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg font-medium text-xs hover:bg-indigo-100 transition-colors shadow-sm"
+                    title="Export Chinese translation JSON (reference only)"
+                >
+                    <span className="material-icons text-sm">file_download</span>
+                    Export Translation
                 </button>
             </div>
          </div>
@@ -427,7 +629,7 @@ const App: React.FC = () => {
             )}
             
             {data ? (
-               <JsonEditor data={data} onChange={handleVisualChange} />
+               <JsonEditor data={data} onChange={handleVisualChange} translationMap={translationMap} />
             ) : (
                <div className="h-full flex flex-col items-center justify-center text-slate-400">
                   <span className="material-icons text-6xl mb-4 text-slate-300">code_off</span>

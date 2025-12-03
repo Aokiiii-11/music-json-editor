@@ -1,0 +1,208 @@
+{
+  "global_dimension": {
+    "fact_keywords": {
+      "genre": "J-Pop, Pop Rock",
+      "language": "Japanese",
+      "gender": "Female",
+      "vocals": "Bright, clear, earnest, powerful delivery",
+      "bpm": 126,
+      "key": "G Major",
+      "instruments": "Electric guitar (rhythm, lead), Bass guitar, Drums, Synthesizer, Backing vocals",
+      "chord_progression": "IV-V-iii-vi / I-V-vi-iii-IV-iii-ii-V"
+    },
+    "description": "[Genre & Vibe & Texture]: This track is an iconic example of early 90s J-Pop/Rock, radiating an overwhelmingly positive, uplifting, and anthemic atmosphere. The texture is bright and polished, with a clean production style that ensures every element has its own space while contributing to a powerful, unified sound. [Instrumentation]: The arrangement is built on a classic rock band foundation of driving drums, a solid bassline, and layered electric guitars (both rhythmic and for fills). This is richly augmented by hallmark 90s synthesizers, including punchy brass stabs, lush pads that fill the background, and the iconic lead synth melody that opens the track. [Evolution]: The song follows a masterfully executed dynamic curve. It begins with a memorable instrumental hook, transitions into a slightly more subdued verse that sets the scene, builds tension through a modulating pre-chorus, and finally erupts into a full-force, emotionally charged chorus. This pattern repeats, escalating with a passionate guitar solo before a powerful, extended final chorus and fade-out. [Vocals]: The track is defined by a lead female vocal that is bright, clear, and immensely powerful. The delivery is earnest and direct, conveying a sense of unwavering encouragement and sincerity. The use of layered backing vocals in the chorus adds to the anthemic, sing-along quality. [Audio Features]: The mix is clean and punchy, characteristic of high-quality 90s rock production. The kick and bass are locked in, providing a solid low-end foundation without being boomy. The dynamic range is well-managed, allowing for a significant volume and energy lift in the choruses, which feel impactful and expansive compared to the verses. Reverb is used effectively to create a sense of space and grandeur, especially on the vocals and snare drum.",
+    "highlights": {
+      "Strong Mainstream Appeal": "With its universally encouraging lyrics, an incredibly memorable chorus, and an energetic pop-rock arrangement, the song possesses immense mainstream appeal. These elements make it a timeless classic in its home country, frequently used in sporting events, graduations, and media, ensuring its wide and enduring dissemination.",
+      "Strong Commercial/Ad Potential": "The track's uplifting and motivational energy, combined with its simple, memorable melody, makes it exceptionally well-suited for commercial use. It would be a perfect fit for industries such as sporting goods, beverages, automotive, or any campaign focused on perseverance, achievement, and positive energy.",
+      "Dynamic Emotional Development in Arrangement": "The arrangement masterfully builds emotional momentum. It starts with a simple synth hook, scales back for the narrative verse, then uses the pre-chorus to build harmonic and melodic tension before exploding into the full, layered instrumentation of the chorus. This carefully controlled progression from quiet contemplation to an anthemic climax creates a deeply satisfying and emotionally resonant listening journey.",
+      "Rich Instrumentation": "The track features a full and well-balanced J-Pop/Rock instrumentation. The core of drums, bass, and electric guitar is enriched by a sophisticated use of synthesizers, including brass stabs, atmospheric pads, and melodic leads. This layering of live and electronic instruments creates a sound that is both powerful and texturally interesting, defining the iconic sound of its era.",
+      "Unique/Recognizable Timbre": "The female vocalist's timbre is a key element of the song's identity. It is a bright, clear, and powerful voice that maintains a sense of stability and purity even in the highest and most forceful passages. This distinctive and consistent vocal quality makes the artist and the song instantly recognizable.",
+      "Rich Emotional Layering": "The vocalist demonstrates a superb emotional arc that mirrors the song's arrangement. The performance begins with a gentle, encouraging tone in the verses, builds with a sense of rising determination in the pre-choruses, and culminates in a powerful, wholehearted, and inspiring delivery in the choruses. This dynamic emotional journey makes the song's message of perseverance deeply moving."
+    },
+    "lowlights": {}
+  },
+  "section_dimension": [
+    {
+      "id": "Intro",
+      "timestamp": "00:00-00:25",
+      "keywords": {
+        "structure_control": "Anthemic Introduction",
+        "musical_basis": "4/4, 126 BPM, G Major",
+        "instrumentation_and_tech": "Organ, Electric Guitar, Bass Guitar, Drums",
+        "vocal_control": "Instrumental",
+        "chord_progression": "bVI-bVI-bVI-V / I-V-vi-iii-IV-iii-ii-V"
+      },
+      "description": "The song kicks off with an iconic and energetic instrumental introduction. Rhythm guitars provide a solid harmonic foundation, creating a feeling of grand anticipation and establishing the song's uplifting and powerful mood from the very first second.",
+      "lyrics": "",
+      "highlights": {},
+      "lowlights": {}
+    },
+    {
+      "id": "Verse 1",
+      "timestamp": "00:25-00:40",
+      "keywords": {
+        "structure_control": "Narrative Setup",
+        "musical_basis": "4/4, 126 BPM, G Major",
+        "instrumentation_and_tech": "Drums, Bass Guitar, Electric Guitar, Female lead vocal",
+        "vocal_control": "Female lead vocal",
+        "chord_progression": "IV-V-iii-vi"
+      },
+      "description": "The energy pulls back slightly as the first verse begins, allowing the female lead vocal to take center stage. The arrangement remains steady, with the core rhythm section of guitar drums and bass providing a constant pulse",
+      "lyrics": "ふとした瞬间に\n视线がぶつかる\n幸せのときめき\n覚えているでしょう",
+      "highlights": {},
+      "lowlights": {}
+    },
+    {
+      "id": "Pre-Chorus 1",
+      "timestamp": "00:40-00:55",
+      "keywords": {
+        "structure_control": "Tension Build-up",
+        "musical_basis": "4/4, 126 BPM, E Minor",
+        "instrumentation_and_tech": "Drums, Bass Guitar, Electric Guitar,  Female lead vocal",
+        "vocal_control": "Female lead vocal, rising melody, building intensity",
+        "chord_progression": "ii-IV-V-vi"
+      },
+      "description": "This section serves as a powerful ramp up to the chorus. The harmony shifts to the relative minor key, creating a sense of poignant anticipation. The vocal melody begins to climb in pitch and intensity, conveying a growing sense of determination. The instrumental arrangement supports this build, with the drums becoming more active with fills, leading perfectly into the emotional release of the chorus.",
+      "lyrics": "バス停からの季节に恋した\nあの日のように辉いてる\nあなたでいてね",
+      "highlights": {
+        "Tense and Dynamic Melody": "The pre-chorus at 00:40 features a masterful use of melodic tension. The vocal line systematically ascends, creating a powerful sense of upward momentum and anticipation. This rising contour, combined with the harmonic shift to the relative minor, effectively builds suspense that makes the subsequent resolution into the major-key chorus incredibly satisfying and impactful.",
+        "Well-executed Modulation/Key Change": "The modulation from the G Major verse to the E minor pre-chorus at 00:40 is a brilliant harmonic device. This shift to the relative minor key instantly changes the emotional color of the song, introducing a feeling of longing and struggle that perfectly sets up the triumphant, uplifting resolution of the G Major chorus. The transition is smooth and musically effective, enhancing the song's narrative arc."
+      },
+      "lowlights": {}
+    },
+    {
+      "id": "Chorus 1",
+      "timestamp": "00:55-01:14",
+      "keywords": {
+        "structure_control": "Energetic Climax, Hook",
+        "musical_basis": "4/4, 126 BPM, G Major",
+        "instrumentation_and_tech": "Drums, Bass Guitar, Electric Guitar, Synthesizer, Female lead vocal, Backing vocals",
+        "vocal_control": "Female lead vocal, layered harmonies",
+        "chord_progression": "I-V-vi-iii-IV-iii-ii-V"
+      },
+      "description": "The chorus erupts with a massive surge of energy, representing the song's emotional and dynamic peak. The guitars switch to heavy, distorted power chords, the cymbals crash on the downbeats, and the bass drives the harmony with a powerful 8th-note pulse. The vocalist delivers the iconic, uplifting melody with full force and conviction, cementing it as an unforgettable anthem.",
+      "lyrics": "负けないで\nもう少し最后まで走り抜けて\nどんなに离れてても\n心はそばにいるわ\n追いかけて遥かな梦を",
+      "highlights": {
+        "Catchy and Memorable Melody": "The chorus melody, first appearing at 00:55, is the song's core appeal. Its construction, using a simple, ascending pattern with a clear rhythmic hook on the title phrase, is incredibly effective and easy to remember. This melodic simplicity and powerful delivery make it an instant sing-along, lodging it firmly in the listener's mind.",
+        "High Sectional Contrast": "The transition from the pre-chorus into the chorus at 00:55 demonstrates outstanding sectional contrast. The dynamics leap from a controlled build-up to a full-force delivery, the texture thickens with the addition of layered backing vocals and more prominent synths, and the harmony resolves back to a triumphant major key. This dramatic shift creates an exhilarating release of tension and makes the chorus feel immensely powerful and impactful."
+      },
+      "lowlights": {}
+    },
+    {
+      "id": "Instrumental Break",
+      "timestamp": "01:14-01:22",
+      "keywords": {
+        "structure_control": "Transitional Bridge",
+        "musical_basis": "4/4, 126 BPM, G Major",
+        "instrumentation_and_tech": "Synthesizer, Electric Guitar, Bass Guitar, Drums",
+        "vocal_control": "Instrumental",
+        "chord_progression": "I-V-vi-iii-IV-iii-ii-V"
+      },
+      "description": "A short instrumental break provides a brief moment to breathe after the high-energy chorus. It reprises the main synthesizer hook from the intro, reinforcing the song's central melodic theme. This serves as a clean and effective transition, resetting the energy before launching into the second verse.",
+      "lyrics": "(Instrumental)",
+      "highlights": {},
+      "lowlights": {}
+    },
+    {
+      "id": "Verse 2",
+      "timestamp": "01:22-01:37",
+      "keywords": {
+        "structure_control": "Narrative Continuation",
+        "musical_basis": "4/4, 126 BPM, G Major",
+        "instrumentation_and_tech": "Drums, Bass Guitar, Electric Guitar, Female lead vocal",
+        "vocal_control": "Female lead vocal, clear delivery",
+        "chord_progression": "IV-V-iii-vi"
+      },
+      "description": "The female vocal continues with her clear, earnest delivery. The rhythm section maintains its steady, driving pace, ensuring the song's momentum is never lost, even in its quieter moments.",
+      "lyrics": "何が起きたって\nへっちゃらな颜して\nどうにかなるさと\nおどけてみせるの",
+      "highlights": {},
+      "lowlights": {}
+    },
+    {
+      "id": "Pre-Chorus 2",
+      "timestamp": "01:37-01:52",
+      "keywords": {
+        "structure_control": "Tension Build-up",
+        "musical_basis": "4/4, 126 BPM, E Minor",
+        "instrumentation_and_tech": "Drums, Bass Guitar, Electric Guitar, Synthesizer, Female lead vocal",
+        "vocal_control": "Female lead vocal, rising intensity",
+        "chord_progression": "ii-IV-V-vi"
+      },
+      "description": "Following the established structure, the second pre-chorus again shifts to the relative minor key to build tension. The vocal melody and intensity rise once more, but with a slightly more impassioned delivery than the first time, reflecting the song's overall emotional progression. It perfectly sets the stage for the return of the powerful chorus.",
+      "lyrics": "今宵はわたくしと一绪に踊りましょ\n今もそんなあなたが好きよ\n忘れないで",
+      "highlights": {},
+      "lowlights": {}
+    },
+    {
+      "id": "Chorus 2",
+      "timestamp": "01:52-02:15",
+      "keywords": {
+        "structure_control": "Energetic Climax, Double Hook",
+        "musical_basis": "4/4, 126 BPM, G Major",
+        "instrumentation_and_tech": "Drums, Bass Guitar, Electric Guitar, Synthesizer, Female lead vocal, Backing vocals",
+        "vocal_control": "Female lead vocal, resonant tone, layered harmonies",
+        "chord_progression": "I-V-vi-iii-IV-iii-ii-V"
+      },
+      "description": "The second chorus hits with even greater force. This expanded chorus section repeats the main hook and adds a second, equally powerful melodic phrase, amplifying the anthemic quality. The singer's voice is at full power, delivering a solid and resonant performance that cuts through the dense arrangement of synths, guitars, and backing vocals. This section is the heart of the song's emotional peak.",
+      "lyrics": "负けないで\nほらそこに\nゴールは近づいてる\nどんなに离れてても\n心はそばにいるわ\n感じてね\n见つめる瞳",
+      "highlights": {
+        "Solid and Resonant Vocal": "In the powerful chorus at 01:52, the vocalist delivers the high notes, such as on the line 'ゴールは近づいてる' (gōru wa chikazuiteru), with exceptional stability and resonance. The voice is clearly well-supported, projecting with a full, three-dimensional quality that sounds neither strained nor thin, anchoring the song's emotional climax with authority and conviction."
+      },
+      "lowlights": {}
+    },
+    {
+      "id": "Guitar Solo",
+      "timestamp": "02:15-02:38",
+      "keywords": {
+        "structure_control": "Instrumental Climax",
+        "musical_basis": "4/4, 126 BPM, E Minor",
+        "instrumentation_and_tech": "Electric guitar solo, Drums, Bass Guitar, Synthesizer, Rhythm Guitar",
+        "vocal_control": "Instrumental",
+        "chord_progression": "bVI-bVI-bVI-V / ii-IV-V-vi"
+      },
+      "description": "The song transitions into a fiery and melodic guitar solo. The lead guitar takes over the melodic focus, delivering a performance filled with tasteful bends, expressive vibrato, and fast, clean runs. It's a perfectly crafted solo that enhances the song's energy rather than simply showing off, serving as an instrumental echo of the vocalist's passion. The rhythm section provides a powerful, driving backdrop.",
+      "lyrics": "(Instrumental)",
+      "highlights": {
+        "Advanced Instrumental Performance Skills": "The guitar solo at 2:15 showcases a high level of musicianship. The performance is not just technical but intensely melodic, using expressive string bends, controlled vibrato, and rapid, articulate runs. This virtuosity serves the song perfectly, lifting its energy to a new peak and providing a thrilling instrumental climax that enhances the track's overall triumphant feeling."
+      },
+      "lowlights": {}
+    },
+    {
+      "id": "Final Chorus",
+      "timestamp": "02:38-03:22",
+      "keywords": {
+        "structure_control": "Grand Finale, Repeated Climax",
+        "musical_basis": "4/4, 126 BPM, G Major",
+        "instrumentation_and_tech": "Drums, Bass Guitar, Electric Guitar, Synthesizer, Female lead vocal, Backing vocals",
+        "vocal_control": "Female lead vocal, sustained power, layered harmonies",
+        "chord_progression": "I-V-vi-iii-IV-iii-ii-V"
+      },
+      "description": "The final chorus section is an extended and powerful culmination of all the song's elements. The full instrumental arrangement, dense with synths, guitars, and backing vocals, creates a massive wall of sound. This grand finale drives home the song's inspirational message with overwhelming force and sincerity.",
+      "lyrics": "负けないで\nもう少し最后まで走り抜けて\nどんなに离れてても\n心はそばにいるわ\n追いかけて遥かな梦を\n负けないで\nほらそこに\nゴールは近づいてる\nどんなに离れてても\n心はそばにいるわ\n感じてね\n见つめる瞳",
+      "highlights": {
+        "Infectious and Moving": "The final double-chorus, beginning at 2:38, represents the song's emotional zenith. The combination of the repeated, uplifting lyrics about not giving up, the singer's passionate and unwavering vocal delivery, creates a moment of pure, infectious catharsis. This powerful delivery resonates deeply, making the listener feel the encouragement and strength conveyed in the music."
+      },
+      "lowlights": {}
+    },
+    {
+      "id": "Outro",
+      "timestamp": "03:22-03:48",
+      "keywords": {
+        "structure_control": "Fade-out",
+        "musical_basis": "4/4, 126 BPM, G Major",
+        "instrumentation_and_tech": "Electric Guitar, Bass Guitar, Drums, Synthesizer",
+        "vocal_control": "layered harmonies",
+        "chord_progression": "I-V-vi-iii-IV-iii-ii-V"
+      },
+      "description": "The song fades out over a repetition of the chorus's instrumental progression. The lead guitar continues to play melodic fills makes a final appearance. The energy gradually dissipates as the track fades to silence, leaving the listener with the lingering feeling of positivity and encouragement.",
+      "lyrics": "",
+      "highlights": {},
+      "lowlights": {}
+    }
+  ],
+  "_pipeline_info": {
+    "processing_status": "success",
+    "audio_duration_seconds": 0,
+    "processing_time_seconds": 101.4
+  }
+}
