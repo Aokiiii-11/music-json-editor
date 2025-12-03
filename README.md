@@ -1,20 +1,168 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# JSON校验器 - 结构和内容对比工具
 
-# Run and deploy your AI Studio app
+一个独立的网页JSON校验器工具，支持用户输入原文和译文JSON文件，自动对译文进行格式校验和路径对比，提供通过/错误/警告的校验结果。新增VS Code风格的文本差异高亮功能，支持并排和逐行视图模式，直观展示JSON结构和内容的差异。
 
-This contains everything you need to run your app locally.
+## 🌟 主要特性
 
-View your app in AI Studio: https://ai.studio/apps/drive/1Oh9cZDF1p8vuUOp5OssxnTXu4OIaIHvI
+- **🔄 双模式输入**: 支持粘贴文本和上传本地文件两种方式
+- **🎯 智能对比**: 自动移除译文中的分隔符和中文内容，进行结构对比
+- **🎨 VS Code风格差异高亮**: 新增绿色、删除红色、修改黄色背景标注
+- **📱 响应式设计**: 支持桌面和移动设备，自适应布局
+- **⚡ 本地运行**: 完全在浏览器本地运行，无需服务器，保护数据隐私
+- **🔍 详细错误报告**: 显示具体错误路径和类型（缺失、类型不匹配、值不匹配）
+- **⚠️ 智能警告**: 检测多余字段并提供警告信息
 
-## Run Locally
+## 🚀 快速开始
 
-**Prerequisites:**  Node.js
+1. **打开应用**: 在浏览器中打开 `index.html` 文件
+2. **输入JSON数据**: 
+   - 在左侧文本框粘贴或上传原文JSON文件
+   - 在右侧文本框粘贴或上传译文JSON文件
+3. **开始校验**: 点击"开始校验"按钮
+4. **查看结果**: 查看差异对比和校验结果
 
+## 📋 功能详解
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### 文件输入区域
+- **拖拽上传**: 支持将JSON文件拖拽到文本区域或上传区域
+- **文件选择**: 点击上传区域选择本地JSON文件
+- **文本粘贴**: 直接在文本框中粘贴JSON内容
+- **实时验证**: 自动验证JSON格式，格式错误会显示提示
+
+### 差异对比视图
+- **并排视图**: 默认显示方式，左右对比原文和译文
+- **逐行视图**: 切换为单列显示，便于查看详细差异
+- **VS Code风格高亮**:
+  - 🟢 新增内容：绿色背景 (`#d4edda`)
+  - 🔴 删除内容：红色背景 (`#f8d7da`)
+  - 🟡 修改内容：黄色背景 (`#fff3cd`)
+
+### 校验结果
+- **状态显示**: 绿色通过、红色失败状态标识
+- **统计信息**: 显示错误和警告数量
+- **详细列表**: 列出所有错误和警告的具体路径和描述
+
+## 🔧 技术实现
+
+### 核心技术
+- **前端**: 原生HTML5 + CSS3 + JavaScript (ES6+)
+- **差异算法**: 基于LCS（最长公共子序列）的文本差异算法
+- **JSON处理**: 原生JSON解析和路径扁平化
+- **文件处理**: HTML5 File API
+
+### 关键算法
+
+#### JSON路径扁平化
+```javascript
+// 将嵌套JSON对象转换为扁平路径结构
+{
+  "album.tracks[0].name": "Ignition",
+  "album.tracks[0].length": 210,
+  "album.title": "Road Rush"
+}
+```
+
+#### 译文清理
+```javascript
+// 自动移除中文和分隔符
+"High energy rock song | 高能量摇滚歌曲" → "High energy rock song"
+```
+
+#### 结构对比
+- **缺失字段检测**: 检查原文中存在但译文中缺失的路径
+- **类型匹配**: 确保对应路径的数据类型一致
+- **值匹配**: 清理后的译文值与原文值对比
+- **多余字段警告**: 检测译文中存在但原文中没有的路径
+
+## 🎨 界面设计
+
+### 颜色方案
+- **主色调**: 简洁白色背景配合蓝色操作按钮
+- **状态颜色**:
+  - 成功: #28a745 (绿色)
+  - 错误: #dc3545 (红色)
+  - 警告: #ffc107 (黄色)
+- **差异高亮**:
+  - 新增: #d4edda (浅绿)
+  - 删除: #f8d7da (浅红)
+  - 修改: #fff3cd (浅黄)
+
+### 响应式布局
+- **桌面端**: 左右分栏布局，左侧输入区域，右侧差异对比
+- **平板端**: 垂直堆叠布局，保持功能完整性
+- **手机端**: 单列布局，优化触摸操作体验
+
+## 📁 文件结构
+
+```
+json-validator/
+├── index.html          # 主应用页面
+├── styles.css          # 样式文件
+├── validator.js        # 核心JavaScript逻辑
+├── test.html           # 测试页面
+├── examples/           # 示例JSON文件
+│   ├── original.json   # 原文示例
+│   └── translated.json # 译文示例
+└── README.md           # 项目文档
+```
+
+## 🌐 浏览器兼容性
+
+- Chrome 60+
+- Firefox 55+
+- Safari 11+
+- Edge 79+
+
+支持现代浏览器的File API和ES6语法。
+
+## 🔒 隐私与安全
+
+- **本地运行**: 所有处理都在浏览器本地完成，数据不会上传到服务器
+- **无依赖**: 零第三方依赖，减少安全风险
+- **开源透明**: 代码完全开源，可审计安全性
+
+## 🚀 部署方式
+
+### 本地使用
+1. 下载项目文件到本地
+2. 直接在浏览器中打开 `index.html`
+
+### Web服务器部署
+```bash
+# Python简单HTTP服务器
+python3 -m http.server 8080
+
+# Node.js http-server
+npx http-server
+
+# 访问 http://localhost:8080
+```
+
+### 集成到现有项目
+1. **独立HTML文件**: 复制HTML、CSS、JavaScript代码到项目中
+2. **iframe嵌入**: 将工具页面作为iframe嵌入到现有页面
+3. **模块化引入**: 将核心校验函数提取为独立模块
+
+## 🎯 使用场景
+
+- **国际化开发**: 验证多语言JSON文件的完整性和一致性
+- **API文档**: 检查接口返回数据的结构是否发生变化
+- **配置文件**: 验证配置文件格式是否正确
+- **数据迁移**: 对比不同版本的数据结构差异
+
+## 🤝 贡献指南
+
+欢迎提交Issue和Pull Request来改进这个项目！
+
+## 📄 许可证
+
+MIT License - 详见 [LICENSE](LICENSE) 文件
+
+## 🙏 致谢
+
+- VS Code差异高亮设计灵感
+- 开源社区的优秀实践
+
+---
+
+**JSON校验器** - 让JSON结构对比变得简单直观！

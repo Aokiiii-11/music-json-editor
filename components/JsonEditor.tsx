@@ -130,9 +130,9 @@ const TranslationUnit: React.FC<TranslationUnitProps> = ({ label, value, onChang
 
   // Parse Value safely
   const safeValue = (value === null || value === undefined) ? '' : String(value);
-  const parts = safeValue.split('|');
-  const en = parts[0]?.trim() || '';
-  const cn = parts.length > 1 ? parts.slice(1).join('|').trim() : '';
+  const m = safeValue.match(/^(.*?)\s*(?:[|｜\/／\-—–·・:：;；])\s*(.*)$/);
+  const en = m ? (m[1] || '').trim() : (safeValue || '').trim();
+  const cn = m ? (m[2] || '').trim() : '';
 
   // Local state for editing mode
   const [editEn, setEditEn] = useState(en);

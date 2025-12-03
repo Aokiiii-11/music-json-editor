@@ -1,0 +1,10 @@
+{
+  "description": "High energy rock song | 高能量摇滚歌曲",
+  "album": {
+    "title": "Road Rush | 公路疾驰",
+    "tracks": [
+      { "name": "Ignition | 点火", "length": 210 },
+      { "name": "Nitro | 硝基", "length": 198 }
+    ]
+  }
+}

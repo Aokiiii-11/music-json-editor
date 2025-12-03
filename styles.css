@@ -1,0 +1,538 @@
+/* 基础样式 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #333;
+    background-color: #f8f9fa;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* 头部样式 */
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 20px 0;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.header h1 {
+    font-size: 28px;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.subtitle {
+    font-size: 16px;
+    color: #7f8c8d;
+}
+
+/* 主要内容区域 */
+.main-content {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 30px;
+}
+
+/* 输入区域 */
+.input-section {
+    margin-bottom: 30px;
+}
+
+.input-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.input-panel {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 20px;
+    border: 1px solid #e9ecef;
+}
+
+.input-panel h3 {
+    font-size: 16px;
+    margin-bottom: 15px;
+    color: #495057;
+    font-weight: 600;
+}
+
+.input-controls {
+    position: relative;
+}
+
+.json-input {
+    width: 100%;
+    height: 200px;
+    padding: 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    resize: vertical;
+    background: white;
+    transition: border-color 0.2s ease;
+}
+
+.json-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.file-upload-area {
+    margin-top: 10px;
+    padding: 15px;
+    border: 2px dashed #ced4da;
+    border-radius: 4px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: white;
+}
+
+.file-upload-area:hover {
+    border-color: #007bff;
+    background: #f8f9ff;
+}
+
+.file-upload-area.drag-over {
+    border-color: #007bff;
+    background: #e3f2fd;
+}
+
+.upload-hint {
+    color: #6c757d;
+    font-size: 13px;
+}
+
+.file-input {
+    display: none;
+}
+
+/* 控制按钮区域 */
+.controls-section {
+    margin-bottom: 30px;
+    padding: 20px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    justify-content: center;
+}
+
+/* 按钮样式 */
+.btn {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #545b62;
+    transform: translateY(-1px);
+}
+
+/* 视图切换开关 */
+.view-toggle {
+    margin-left: auto;
+}
+
+.toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #495057;
+}
+
+.toggle-label input[type="checkbox"] {
+    display: none;
+}
+
+.toggle-slider {
+    width: 40px;
+    height: 20px;
+    background: #ccc;
+    border-radius: 10px;
+    position: relative;
+    transition: background 0.2s ease;
+}
+
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background: white;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.2s ease;
+}
+
+.toggle-label input[type="checkbox"]:checked + .toggle-slider {
+    background: #007bff;
+}
+
+.toggle-label input[type="checkbox"]:checked + .toggle-slider::before {
+    transform: translateX(20px);
+}
+
+/* 差异对比区域 */
+.diff-section {
+    margin-bottom: 30px;
+}
+
+.diff-section h3 {
+    font-size: 18px;
+    margin-bottom: 20px;
+    color: #495057;
+}
+
+.diff-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 20px;
+}
+
+.diff-panel {
+    background: white;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid #e9ecef;
+}
+
+.diff-panel h4 {
+    padding: 12px 15px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 14px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.diff-content {
+    padding: 15px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* VS Code风格差异高亮 */
+.diff-line {
+    padding: 2px 4px;
+    margin: 1px 0;
+    border-radius: 2px;
+    position: relative;
+}
+
+.diff-line.unchanged {
+    background: transparent;
+}
+
+.diff-line.added {
+    background: #d4edda; /* VS Code新增绿色 */
+    border-left: 3px solid #28a745;
+}
+
+.diff-line.removed {
+    background: #f8d7da; /* VS Code删除红色 */
+    border-left: 3px solid #dc3545;
+}
+
+.diff-line.modified {
+    background: #fff3cd; /* VS Code修改黄色 */
+    border-left: 3px solid #ffc107;
+}
+
+.diff-line-number {
+    display: inline-block;
+    width: 30px;
+    color: #6c757d;
+    text-align: right;
+    margin-right: 10px;
+    font-size: 12px;
+}
+
+/* 校验结果区域 */
+.results-section h3 {
+    font-size: 18px;
+    margin-bottom: 20px;
+    color: #495057;
+}
+
+.results-summary {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.result-stats {
+    display: flex;
+    gap: 30px;
+    align-items: center;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.stat-label {
+    font-weight: 500;
+    color: #495057;
+}
+
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.status-badge.success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.error {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.status-badge.warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.count-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    min-width: 20px;
+    text-align: center;
+}
+
+.error-count {
+    background: #dc3545;
+    color: white;
+}
+
+.warning-count {
+    background: #ffc107;
+    color: #212529;
+}
+
+.results-list {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.result-item {
+    padding: 12px 15px;
+    border-bottom: 1px solid #f1f3f4;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.result-item:last-child {
+    border-bottom: none;
+}
+
+.result-icon {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.result-icon.error {
+    background: #dc3545;
+}
+
+.result-icon.warning {
+    background: #ffc107;
+}
+
+.result-path {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 12px;
+    color: #495057;
+    font-weight: 500;
+}
+
+.result-message {
+    font-size: 13px;
+    color: #6c757d;
+    margin-left: 8px;
+}
+
+/* 底部 */
+.footer {
+    text-align: center;
+    margin-top: 40px;
+    padding: 20px;
+    color: #6c757d;
+    font-size: 13px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .main-content {
+        padding: 20px;
+    }
+    
+    .input-group {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .diff-container {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .view-toggle {
+        margin-left: 0;
+        margin-top: 10px;
+    }
+    
+    .result-stats {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .header h1 {
+        font-size: 24px;
+    }
+    
+    .subtitle {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-content {
+        padding: 15px;
+    }
+    
+    .input-panel {
+        padding: 15px;
+    }
+    
+    .json-input {
+        height: 150px;
+    }
+    
+    .btn {
+        padding: 8px 20px;
+        font-size: 13px;
+    }
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.diff-section,
+.results-section {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* 滚动条样式 */
+.diff-content::-webkit-scrollbar,
+.results-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.diff-content::-webkit-scrollbar-track,
+.results-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.diff-content::-webkit-scrollbar-thumb,
+.results-list::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.diff-content::-webkit-scrollbar-thumb:hover,
+.results-list::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}

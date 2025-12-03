@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON校验器测试</title>
+</head>
+<body>
+    <h1>JSON校验器测试页面</h1>
+    <p>请访问 <a href="/index.html">主应用</a> 进行测试</p>
+    
+    <h2>测试数据</h2>
+    <h3>原文JSON:</h3>
+    <pre id="original"></pre>
+    
+    <h3>译文JSON:</h3>
+    <pre id="translated"></pre>
+    
+    <script>
+        // 加载示例数据
+        const originalData = {
+            "description": "High energy rock song",
+            "album": {
+                "title": "Road Rush",
+                "tracks": [
+                    { "name": "Ignition", "length": 210 },
+                    { "name": "Nitro", "length": 198 }
+                ]
+            }
+        };
+        
+        const translatedData = {
+            "description": "High energy rock song | 高能量摇滚歌曲",
+            "album": {
+                "title": "Road Rush | 公路疾驰",
+                "tracks": [
+                    { "name": "Ignition | 点火", "length": 210 },
+                    { "name": "Nitro | 硝基", "length": 198 }
+                ]
+            }
+        };
+        
+        document.getElementById('original').textContent = JSON.stringify(originalData, null, 2);
+        document.getElementById('translated').textContent = JSON.stringify(translatedData, null, 2);
+    </script>
+</body>
+</html>

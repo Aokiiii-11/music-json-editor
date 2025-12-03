@@ -1,61 +1,114 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bilingual Music JSON Editor</title>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <style>
-      /* Custom scrollbar for better aesthetics */
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #f1f5f9; 
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #cbd5e1; 
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8; 
-      }
-
-      /* Animations */
-      @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      .animate-fade-in {
-        animation: fadeIn 0.4s ease-out forwards;
-      }
-
-      @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      .animate-fade-in-up {
-        animation: fadeInUp 0.3s ease-out forwards;
-      }
-
-      /* Text Highlighting for Translation Correspondence */
-      .sentence-span {
-        transition: background-color 0.15s ease, color 0.15s ease;
-        border-radius: 2px;
-        cursor: text;
-        padding: 0 2px;
-      }
-      .sentence-span:hover, .sentence-span.highlighted {
-        background-color: #fef08a; /* Yellow-200 */
-        color: #0f172a;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-      }
-    </style>
-  
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON校验器 - 结构和内容对比工具</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
-  <body class="bg-slate-50 text-slate-900 font-sans antialiased h-screen overflow-hidden">
-    <div id="root" class="h-full flex flex-col"></div>
-  <script type="module" src="/index.tsx"></script>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>JSON校验器</h1>
+            <p class="subtitle">结构和内容对比工具</p>
+        </header>
+
+        <main class="main-content">
+            <!-- 文件输入区域 -->
+            <section class="input-section">
+                <div class="input-group">
+                    <div class="input-panel">
+                        <h3>原文JSON</h3>
+                        <div class="input-controls">
+                            <textarea 
+                                id="originalJson" 
+                                class="json-input" 
+                                placeholder="粘贴原文JSON或拖拽文件到此处..."
+                                spellcheck="false"
+                            ></textarea>
+                            <div class="file-upload-area" data-target="original">
+                                <span class="upload-hint">或拖拽文件到此处</span>
+                                <input type="file" id="originalFile" accept=".json" class="file-input">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="input-panel">
+                        <h3>译文JSON</h3>
+                        <div class="input-controls">
+                            <textarea 
+                                id="translatedJson" 
+                                class="json-input" 
+                                placeholder="粘贴译文JSON或拖拽文件到此处..."
+                                spellcheck="false"
+                            ></textarea>
+                            <div class="file-upload-area" data-target="translated">
+                                <span class="upload-hint">或拖拽文件到此处</span>
+                                <input type="file" id="translatedFile" accept=".json" class="file-input">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 操作按钮 -->
+            <section class="controls-section">
+                <div class="controls">
+                    <button id="validateBtn" class="btn btn-primary">开始校验</button>
+                    <button id="clearBtn" class="btn btn-secondary">清空</button>
+                    <div class="view-toggle">
+                        <label class="toggle-label">
+                            <input type="checkbox" id="inlineViewToggle">
+                            <span class="toggle-slider"></span>
+                            逐行视图
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 差异对比视图 -->
+            <section class="diff-section" id="diffSection" style="display: none;">
+                <h3>差异对比</h3>
+                <div class="diff-container">
+                    <div class="diff-panel">
+                        <h4>原文</h4>
+                        <div id="originalDiff" class="diff-content"></div>
+                    </div>
+                    <div class="diff-panel">
+                        <h4>译文</h4>
+                        <div id="translatedDiff" class="diff-content"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 校验结果显示 -->
+            <section class="results-section" id="resultsSection" style="display: none;">
+                <h3>校验结果</h3>
+                <div class="results-summary">
+                    <div class="result-stats">
+                        <span class="stat-item">
+                            <span class="stat-label">状态：</span>
+                            <span id="validationStatus" class="status-badge"></span>
+                        </span>
+                        <span class="stat-item">
+                            <span class="stat-label">错误：</span>
+                            <span id="errorCount" class="count-badge error-count">0</span>
+                        </span>
+                        <span class="stat-item">
+                            <span class="stat-label">警告：</span>
+                            <span id="warningCount" class="count-badge warning-count">0</span>
+                        </span>
+                    </div>
+                </div>
+                <div id="resultsList" class="results-list"></div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>JSON校验器 - 完全在浏览器本地运行，无需服务器</p>
+        </footer>
+    </div>
+
+    <script src="validator.js"></script>
 </body>
 </html>

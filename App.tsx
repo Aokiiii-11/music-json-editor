@@ -150,8 +150,8 @@ const App: React.FC = () => {
   // 4. Clean Data Helper (Strips Chinese)
   const cleanData = (obj: any): any => {
     if (typeof obj === 'string') {
-      // Split by pipe and take the first part (Original)
-      return obj.split('|')[0].trim();
+      const m = obj.match(/^(.*?)\s*(?:[|｜\/／\-—–·・:：;；])\s*(.*)$/);
+      return m ? (m[1] || '').trim() : obj;
     } else if (Array.isArray(obj)) {
       return obj.map(cleanData);
     } else if (typeof obj === 'object' && obj !== null) {
