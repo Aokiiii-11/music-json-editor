@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { MusicData, ApiSettings, ApiProvider } from './types';
 import JsonEditor from './components/JsonEditor';
 import TranslationJsonInput from './components/TranslationJsonInput';
-import { collectStringPaths, getByPath } from './utils/jsonPath';
+import { collectStringPaths, getByPath, parsePathKey } from './utils/jsonPath';
 import { buildTranslationMapFromJson, diagnoseMatch, TranslationMap } from './utils/matcher';
 import Settings from './components/Settings';
 import { translateJson } from './services/geminiService';
@@ -713,12 +713,117 @@ const App: React.FC = () => {
                  compareMode={effectiveMode}
                  diffModeEnabled={diffModeEnabled}
                  translationDiag={effectiveMode === 'dual' ? translationDiag : null}
+                 onEditTranslationRef={(path, newRef) => {
+                   try {
+                     const obj = translationJsonText.trim() ? JSON.parse(translationJsonText) : {};
+                     const segs = parsePathKey(path);
+                     const setBySegs = (root: any, segments: (string|number)[], val: any) => {
+                       let cur = root;
+                       for (let i = 0; i < segments.length; i++) {
+                         const s = segments[i];
+                         const last = i === segments.length - 1;
+                         if (typeof s === 'number') {
+                           if (!Array.isArray(cur)) cur = cur[segments[i-1] as any] = [];
+                           while (cur.length <= s) cur.push('');
+                           if (last) cur[s] = val; else {
+                             if (cur[s] === undefined || cur[s] === null) cur[s] = typeof segments[i+1] === 'number' ? [] : {};
+                             cur = cur[s];
+                           }
+                         } else {
+                           if (typeof cur !== 'object' || cur === null || Array.isArray(cur)) {}
+                           if (!(s in cur)) cur[s] = last ? val : (typeof segments[i+1] === 'number' ? [] : {});
+                           if (last) cur[s] = val; else cur = cur[s];
+                         }
+                       }
+                     };
+                     setBySegs(obj, segs, newRef);
+                     const nextText = JSON.stringify(obj, null, 2);
+                     setTranslationJsonText(nextText);
+                     const nextMap = buildTranslationMapFromJson(obj);
+                     setTranslationMap(nextMap);
+                     setTranslationDiag(diagnoseMatch(data!, obj));
+                   } catch {}
+                 }}
+                 onRenamePath={(oldPath, newPath) => {
+                   try {
+                     const obj = translationJsonText.trim() ? JSON.parse(translationJsonText) : {};
+                     const oldVal = getByPath(obj, oldPath);
+                     if (oldVal === undefined) return;
+                     const segsNew = parsePathKey(newPath);
+                     const segsOld = parsePathKey(oldPath);
+                     const setBySegs = (root: any, segments: (string|number)[], val: any) => {
+                       let cur = root;
+                       for (let i = 0; i < segments.length; i++) {
+                         const s = segments[i];
+                         const last = i === segments.length - 1;
+                         if (typeof s === 'number') {
+                           if (!Array.isArray(cur)) cur = cur[segments[i-1] as any] = [];
+                           while (cur.length <= s) cur.push('');
+                           if (last) cur[s] = val; else {
+                             if (cur[s] === undefined || cur[s] === null) cur[s] = typeof segments[i+1] === 'number' ? [] : {};
+                             cur = cur[s];
+                           }
+                         } else {
+                           if (!(s in cur)) cur[s] = last ? val : (typeof segments[i+1] === 'number' ? [] : {});
+                           if (last) cur[s] = val; else cur = cur[s];
+                         }
+                       }
+                     };
+                     const deleteBySegs = (root: any, segments: (string|number)[]) => {
+                       let cur = root;
+                       for (let i = 0; i < segments.length - 1; i++) {
+                         const s = segments[i];
+                         cur = typeof s === 'number' ? cur[s] : cur[s];
+                         if (cur === undefined) return;
+                       }
+                       const last = segments[segments.length - 1];
+                       if (typeof last === 'number') {
+                         if (Array.isArray(cur) && last >= 0 && last < cur.length) cur.splice(last, 1);
+                       } else {
+                         if (cur && typeof cur === 'object') delete cur[last];
+                       }
+                     };
+                     setBySegs(obj, segsNew, oldVal);
+                     deleteBySegs(obj, segsOld);
+                     const nextText = JSON.stringify(obj, null, 2);
+                     setTranslationJsonText(nextText);
+                     const nextMap = buildTranslationMapFromJson(obj);
+                     setTranslationMap(nextMap);
+                     setTranslationDiag(diagnoseMatch(data!, obj));
+                   } catch {}
+                 }}
+                 onRemovePath={(path) => {
+                   try {
+                     const obj = translationJsonText.trim() ? JSON.parse(translationJsonText) : {};
+                     const segs = parsePathKey(path);
+                     const deleteBySegs = (root: any, segments: (string|number)[]) => {
+                       let cur = root;
+                       for (let i = 0; i < segments.length - 1; i++) {
+                         const s = segments[i];
+                         cur = typeof s === 'number' ? cur[s] : cur[s];
+                         if (cur === undefined) return;
+                       }
+                       const last = segments[segments.length - 1];
+                       if (typeof last === 'number') {
+                         if (Array.isArray(cur) && last >= 0 && last < cur.length) cur.splice(last, 1);
+                       } else {
+                         if (cur && typeof cur === 'object') delete cur[last];
+                       }
+                     };
+                     deleteBySegs(obj, segs);
+                     const nextText = JSON.stringify(obj, null, 2);
+                     setTranslationJsonText(nextText);
+                     const nextMap = buildTranslationMapFromJson(obj);
+                     setTranslationMap(nextMap);
+                     setTranslationDiag(diagnoseMatch(data!, obj));
+                   } catch {}
+                 }}
                />
             ) : (
-               <div className="h-full flex flex-col items-center justify-center text-slate-400">
-                  <span className="material-icons text-6xl mb-4 text-slate-300">code_off</span>
-                  <p>Paste JSON above to start editing</p>
-               </div>
+              <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                 <span className="material-icons text-6xl mb-4 text-slate-300">code_off</span>
+                 <p>Paste JSON above to start editing</p>
+              </div>
             )}
          </div>
       </div>

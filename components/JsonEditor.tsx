@@ -11,6 +11,9 @@ interface JsonEditorProps {
   compareMode?: 'auto'|'source_only'|'dual';
   diffModeEnabled?: boolean;
   translationDiag?: ReturnType<typeof diagnoseMatch> | null;
+  onEditTranslationRef?: (path: string, newRef: string) => void;
+  onRenamePath?: (oldPath: string, newPath: string) => void;
+  onRemovePath?: (path: string) => void;
 }
 
 // --- UTILITIES FOR SENTENCE SPLITTING ---
@@ -125,15 +128,21 @@ interface TranslationUnitProps {
   referenceCn?: string;
   compareMode?: 'auto'|'source_only'|'dual';
   diffModeEnabled?: boolean;
+  allowLabelEdit?: boolean;
+  onRenameLabel?: (newLabel: string) => void;
+  fullPath?: string;
+  onEditReference?: (path: string, newRef: string) => void;
 }
 
 /**
  * The core component for editing a Bilingual pair.
  * Handles the "En | Cn" logic, View/Edit toggle, Hover sync, Selection sync, and Segmented Editing.
  */
-const TranslationUnit: React.FC<TranslationUnitProps> = ({ label, value, onChange, multiline, isImportant, id, referenceCn, compareMode, diffModeEnabled }) => {
+const TranslationUnit: React.FC<TranslationUnitProps> = ({ label, value, onChange, multiline, isImportant, id, referenceCn, compareMode, diffModeEnabled, allowLabelEdit, onRenameLabel, fullPath, onEditReference }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [segmentMode, setSegmentMode] = useState(false); // Toggle for Segmented Editor
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameVal, setRenameVal] = useState(label);
   
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [crossHighlightIndices, setCrossHighlightIndices] = useState<number[]>([]);
@@ -235,9 +244,17 @@ const TranslationUnit: React.FC<TranslationUnitProps> = ({ label, value, onChang
       {/* Header Bar */}
       <div className="flex justify-between items-center px-4 py-2 border-b border-slate-50 bg-slate-50/50 rounded-t-xl">
         <div className="flex items-center gap-2">
-           <span className={`text-xs font-bold uppercase tracking-wider ${isImportant ? 'text-indigo-600' : 'text-slate-500'}`}>
-             {label}
-           </span>
+           {isRenaming ? (
+             <input
+               className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded border ${isValidJsonKeyName(renameVal.trim()) ? 'border-slate-200' : 'border-red-400 bg-red-50'} ${isImportant ? 'text-indigo-600' : 'text-slate-800'}`}
+               value={renameVal}
+               onChange={(e) => setRenameVal(e.target.value)}
+             />
+           ) : (
+             <span className={`text-xs font-bold uppercase tracking-wider ${isImportant ? 'text-indigo-600' : 'text-slate-500'}`}>
+               {label}
+             </span>
+           )}
           {!isEditing && diffModeEnabled && compareMode !== 'source_only' && hasRef && (
             <span className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-medium ${isEqualToRef ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
               {isEqualToRef ? '✓' : '≠'}
@@ -247,6 +264,37 @@ const TranslationUnit: React.FC<TranslationUnitProps> = ({ label, value, onChang
             <span className="flex items-center gap-1 text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-medium">
               <span className="material-icons text-[10px]">warning</span> Missing Reference
             </span>
+          )}
+          {allowLabelEdit && (
+            isRenaming ? (
+              <>
+                <button
+                  onClick={() => {
+                    const nv = renameVal.trim();
+                    if (!isValidJsonKeyName(nv)) return;
+                    onRenameLabel && onRenameLabel(nv);
+                    setIsRenaming(false);
+                  }}
+                  className="px-2 py-1 text-xs rounded bg-indigo-600 text-white"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => { setIsRenaming(false); setRenameVal(label); }}
+                  className="px-2 py-1 text-xs rounded text-slate-500 hover:bg-slate-100"
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setIsRenaming(true)}
+                className="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50"
+                title="Rename key"
+              >
+                <span className="material-icons text-sm">edit</span>
+              </button>
+            )
           )}
         </div>
         
@@ -340,14 +388,16 @@ const TranslationUnit: React.FC<TranslationUnitProps> = ({ label, value, onChang
                   </div>
                   {compareMode==='source_only' ? null : (
                     <div className="flex-1 p-2 transition-opacity duration-200">
-                      <div className="text-[10px] text-indigo-300 font-mono mb-1 uppercase">Reference（只读）</div>
+                      <div className="text-[10px] text-indigo-300 font-mono mb-1 uppercase">Reference</div>
                       <textarea
                         className={`w-full bg-transparent border-none outline-none text-sm text-slate-800 placeholder-indigo-100 resize-none h-full min-h-[80px]`}
-                        value={refCn || editCn}
-                        onChange={() => {}}
-                        placeholder="Translation (reference only)"
+                        value={refCn}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          onEditReference && fullPath && onEditReference(fullPath, v);
+                        }}
+                        placeholder="Translation reference"
                         rows={multiline ? 6 : 2}
-                        disabled
                       />
                     </div>
                   )}
@@ -407,7 +457,10 @@ const DictionaryBlock: React.FC<{
   translationMap?: TranslationMap;
   compareMode?: 'auto'|'source_only'|'dual';
   diffModeEnabled?: boolean;
-  }[]> = ({ data, onChange, title, important, pathPrefix, translationMap, compareMode, diffModeEnabled }) => {
+  onRenamePath?: (oldPath: string, newPath: string) => void;
+  onRemovePath?: (path: string) => void;
+  onEditTranslationRef?: (path: string, newRef: string) => void;
+  }[]> = ({ data, onChange, title, important, pathPrefix, translationMap, compareMode, diffModeEnabled, onRenamePath, onRemovePath, onEditTranslationRef }) => {
   if (!data) return null;
 
   return (
@@ -421,11 +474,32 @@ const DictionaryBlock: React.FC<{
             key={key}
             label={key}
             value={value}
-            onChange={(val) => onChange({ ...data, [key]: val })}
+            onChange={(val) => {
+              const next = { ...data } as Record<string, string>;
+              if (val === '') {
+                delete next[key];
+                onRemovePath && onRemovePath(`${pathPrefix}.${key}`);
+              } else {
+                next[key] = val as string;
+              }
+              onChange(next);
+            }}
             isImportant={important}
             referenceCn={(translationMap && translationMap[`${pathPrefix}.${key}`]) || ''}
             compareMode={compareMode}
             diffModeEnabled={diffModeEnabled}
+            allowLabelEdit
+            onRenameLabel={(newLabel) => {
+              if (newLabel === key) return;
+              const next = { ...data } as Record<string, string>;
+              const val = next[key];
+              delete next[key];
+              next[newLabel] = val;
+              onChange(next);
+              onRenamePath && onRenamePath(`${pathPrefix}.${key}`, `${pathPrefix}.${newLabel}`);
+            }}
+            fullPath={`${pathPrefix}.${key}`}
+            onEditReference={(p, v) => onEditTranslationRef && onEditTranslationRef(p, v)}
           />
         ))}
         {translationMap && compareMode !== 'source_only' && (
@@ -438,11 +512,31 @@ const DictionaryBlock: React.FC<{
                 key={`__extra__${extraKey}`}
                 label={extraKey}
                 value={''}
-                onChange={(val) => onChange({ ...data, [extraKey]: val })}
+                onChange={(val) => {
+                  const next = { ...data } as Record<string, string>;
+                  if (val === '') {
+                    delete next[extraKey];
+                  } else {
+                    next[extraKey] = val as string;
+                  }
+                  onChange(next);
+                }}
                 isImportant={important}
                 referenceCn={(translationMap && translationMap[`${pathPrefix}.${extraKey}`]) || ''}
                 compareMode={compareMode}
                 diffModeEnabled={diffModeEnabled}
+                allowLabelEdit
+                onRenameLabel={(newLabel) => {
+                  if (newLabel === extraKey) return;
+                  const next = { ...data } as Record<string, string>;
+                  const val = next[extraKey];
+                  delete next[extraKey];
+                  next[newLabel] = val;
+                  onChange(next);
+                  onRenamePath && onRenamePath(`${pathPrefix}.${extraKey}`, `${pathPrefix}.${newLabel}`);
+                }}
+                fullPath={`${pathPrefix}.${extraKey}`}
+                onEditReference={(p, v) => onEditTranslationRef && onEditTranslationRef(p, v)}
               />
             ))
         )}
@@ -453,7 +547,7 @@ const DictionaryBlock: React.FC<{
 
 // --- MAIN COMPONENT ---
 
-const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap, compareMode, diffModeEnabled, translationDiag }) => {
+const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap, compareMode, diffModeEnabled, translationDiag, onEditTranslationRef, onRenamePath, onRemovePath }) => {
   const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set([0]));
   const [headerEditIndex, setHeaderEditIndex] = useState<number | null>(null);
   const [headerEditId, setHeaderEditId] = useState<string>('');
@@ -606,6 +700,8 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap,
                 referenceCn={(translationMapRef.current && translationMapRef.current['global_dimension.description']) || ''}
                 compareMode={compareMode}
                 diffModeEnabled={diffModeEnabled}
+                fullPath={'global_dimension.description'}
+                onEditReference={(p, v) => onEditTranslationRef && onEditTranslationRef(p, v)}
               />
             </div>
 
@@ -618,6 +714,9 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap,
                 translationMap={translationMapRef.current || undefined}
                 compareMode={compareMode}
                 diffModeEnabled={diffModeEnabled}
+                onRenamePath={onRenamePath}
+                onRemovePath={onRemovePath}
+                onEditTranslationRef={onEditTranslationRef}
                 />
             </div>
 
@@ -631,6 +730,9 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap,
                 translationMap={translationMapRef.current || undefined}
                 compareMode={compareMode}
                 diffModeEnabled={diffModeEnabled}
+                onRenamePath={onRenamePath}
+                onRemovePath={onRemovePath}
+                onEditTranslationRef={onEditTranslationRef}
                 />
             </div>
 
@@ -643,6 +745,9 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap,
                 translationMap={translationMapRef.current || undefined}
                 compareMode={compareMode}
                 diffModeEnabled={diffModeEnabled}
+                onRenamePath={onRenamePath}
+                onRemovePath={onRemovePath}
+                onEditTranslationRef={onEditTranslationRef}
                 />
             </div>
           </div>
@@ -736,6 +841,8 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap,
                             referenceCn={(translationMapRef.current && translationMapRef.current[`section_dimension[${idx}].description`]) || ''}
                             compareMode={compareMode}
                             diffModeEnabled={diffModeEnabled}
+                            fullPath={`section_dimension[${idx}].description`}
+                            onEditReference={(p, v) => onEditTranslationRef && onEditTranslationRef(p, v)}
                         />
                         <TranslationUnit 
                             label="Lyrics / Content"
@@ -745,6 +852,8 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap,
                             referenceCn={(translationMapRef.current && translationMapRef.current[`section_dimension[${idx}].lyrics`]) || ''}
                             compareMode={compareMode}
                             diffModeEnabled={diffModeEnabled}
+                            fullPath={`section_dimension[${idx}].lyrics`}
+                            onEditReference={(p, v) => onEditTranslationRef && onEditTranslationRef(p, v)}
                         />
                       </div>
 
@@ -756,6 +865,9 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap,
                         translationMap={translationMapRef.current || undefined}
                         compareMode={compareMode}
                         diffModeEnabled={diffModeEnabled}
+                        onRenamePath={onRenamePath}
+                        onRemovePath={onRemovePath}
+                        onEditTranslationRef={onEditTranslationRef}
                       />
 
                       <DictionaryBlock 
@@ -767,6 +879,9 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap,
                         translationMap={translationMapRef.current || undefined}
                         compareMode={compareMode}
                         diffModeEnabled={diffModeEnabled}
+                        onRenamePath={onRenamePath}
+                        onRemovePath={onRemovePath}
+                        onEditTranslationRef={onEditTranslationRef}
                       />
                       
                       <DictionaryBlock 
@@ -777,6 +892,9 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap,
                         translationMap={translationMapRef.current || undefined}
                         compareMode={compareMode}
                         diffModeEnabled={diffModeEnabled}
+                        onRenamePath={onRenamePath}
+                        onRemovePath={onRemovePath}
+                        onEditTranslationRef={onEditTranslationRef}
                       />
                   </div>
                 )}
