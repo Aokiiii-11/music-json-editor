@@ -73,8 +73,13 @@ const App: React.FC = () => {
     return 'dual';
   }, [viewMode, data, translationJsonText, translationMap, translationDiag]);
   // Undo/Redo History
-  const [past, setPast] = useState<MusicData[]>([]);
-  const [future, setFuture] = useState<MusicData[]>([]);
+  interface HistoryState {
+    data: MusicData | null;
+    translationJsonText: string;
+    translationMap: TranslationMap | null;
+  }
+  const [past, setPast] = useState<HistoryState[]>([]);
+  const [future, setFuture] = useState<HistoryState[]>([]);
 
   const extractBilingual = (root: any): { original: any; map: TranslationMap } => {
     const map: TranslationMap = {};
@@ -196,7 +201,7 @@ const App: React.FC = () => {
     try {
       const parsed = JSON.parse(newText);
       const { original, map } = extractBilingual(parsed);
-      setPast((prev) => (data ? [...prev, data] : prev));
+      setPast((prev) => (data ? [...prev, { data, translationJsonText, translationMap }] : prev));
       setFuture([]);
       setData(original);
       setTranslationMap(map);
@@ -204,7 +209,7 @@ const App: React.FC = () => {
       setParseError(null);
       setLastUpdated(new Date());
     } catch (err) {
-      // Don't clear data immediately on syntax error to allow typing, 
+      // Don't clear data immediately on syntax error to allow typing,
       // but show error state
       setParseError("Invalid JSON syntax");
     }
@@ -212,12 +217,12 @@ const App: React.FC = () => {
 
   // 2. Handle Visual Editor Change (Bottom Window)
   const handleVisualChange = useCallback((newData: MusicData) => {
-    setPast((prev) => (data ? [...prev, data] : prev));
+    setPast((prev) => (data ? [...prev, { data, translationJsonText, translationMap }] : prev));
     setFuture([]);
     setData(newData);
     setJsonText(JSON.stringify(newData, null, 2));
     setLastUpdated(new Date());
-  }, [data]);
+  }, [data, translationJsonText, translationMap]);
 
   // 3. Auto Translate
   const handleTranslate = async () => {
@@ -347,7 +352,7 @@ const App: React.FC = () => {
       // Update text to be pretty
       setJsonText(JSON.stringify(original, null, 2));
       // Ensure data is set
-      setPast((prev) => (data ? [...prev, data] : prev));
+      setPast((prev) => (data ? [...prev, { data, translationJsonText, translationMap }] : prev));
       setFuture([]);
       setData(original);
       setTranslationMap(map);
@@ -524,9 +529,11 @@ const App: React.FC = () => {
                     if (!past.length || !data) return;
                     const prev = past[past.length - 1];
                     setPast(past.slice(0, -1));
-                    setFuture([...future, data]);
-                    setData(prev);
-                    setJsonText(JSON.stringify(prev, null, 2));
+                    setFuture([...future, { data, translationJsonText, translationMap }]);
+                    setData(prev.data);
+                    setJsonText(JSON.stringify(prev.data, null, 2));
+                    setTranslationJsonText(prev.translationJsonText);
+                    setTranslationMap(prev.translationMap);
                     setLastUpdated(new Date());
                   }}
                   disabled={!past.length || !data}
@@ -544,9 +551,11 @@ const App: React.FC = () => {
                     if (!future.length || !data) return;
                     const next = future[future.length - 1];
                     setFuture(future.slice(0, -1));
-                    setPast([...past, data]);
-                    setData(next);
-                    setJsonText(JSON.stringify(next, null, 2));
+                    setPast([...past, { data, translationJsonText, translationMap }]);
+                    setData(next.data);
+                    setJsonText(JSON.stringify(next.data, null, 2));
+                    setTranslationJsonText(next.translationJsonText);
+                    setTranslationMap(next.translationMap);
                     setLastUpdated(new Date());
                   }}
                   disabled={!future.length || !data}
@@ -841,9 +850,11 @@ const App: React.FC = () => {
         if (past.length && data) {
           const prev = past[past.length - 1];
           setPast(past.slice(0, -1));
-          setFuture([...future, data]);
-          setData(prev);
-          setJsonText(JSON.stringify(prev, null, 2));
+          setFuture([...future, { data, translationJsonText, translationMap }]);
+          setData(prev.data);
+          setJsonText(JSON.stringify(prev.data, null, 2));
+          setTranslationJsonText(prev.translationJsonText);
+          setTranslationMap(prev.translationMap);
           setLastUpdated(new Date());
         }
       } else if (isRedo) {
@@ -851,16 +862,18 @@ const App: React.FC = () => {
         if (future.length && data) {
           const next = future[future.length - 1];
           setFuture(future.slice(0, -1));
-          setPast([...past, data]);
-          setData(next);
-          setJsonText(JSON.stringify(next, null, 2));
+          setPast([...past, { data, translationJsonText, translationMap }]);
+          setData(next.data);
+          setJsonText(JSON.stringify(next.data, null, 2));
+          setTranslationJsonText(next.translationJsonText);
+          setTranslationMap(next.translationMap);
           setLastUpdated(new Date());
         }
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [past, future, data]);
+  }, [past, future, data, translationJsonText, translationMap]);
 
   return (
     <div className="flex h-screen bg-slate-50">
