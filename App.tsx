@@ -507,6 +507,7 @@ const App: React.FC = () => {
             height={transHeight}
             onToggle={toggleTransPane}
             onBeginResize={beginResizeTrans}
+            externalText={translationJsonText}
          />
 
          {/* --- MIDDLE BAR: ACTIONS --- */}

@@ -8,12 +8,35 @@ interface TranslationJsonInputProps {
   height?: number;
   onToggle?: () => void;
   onBeginResize?: (clientY: number) => void;
+  externalText?: string;
 }
 
-const TranslationJsonInput: React.FC<TranslationJsonInputProps> = ({ originalData, onLoad, collapsed = false, height = 180, onToggle, onBeginResize }) => {
+const TranslationJsonInput: React.FC<TranslationJsonInputProps> = ({ originalData, onLoad, collapsed = false, height = 180, onToggle, onBeginResize, externalText }) => {
   const [text, setText] = useState('');
   const [parseError, setParseError] = useState<string | null>(null);
   const [diag, setDiag] = useState<ReturnType<typeof diagnoseMatch> | null>(null);
+
+  useEffect(() => {
+    if (typeof externalText === 'string' && externalText !== text) {
+      setText(externalText);
+      try {
+        const tjson = externalText.trim() ? JSON.parse(externalText) : {};
+        const diagnostics = originalData ? diagnoseMatch(originalData, tjson) : { missingPaths: [], extraPaths: [], typeMismatches: [] };
+        setDiag(diagnostics);
+        setParseError(null);
+      } catch (err: any) {
+        // 外部文本同步时解析错误也给用户提示
+        console.warn('TranslationJsonInput: External sync parse error ignored', err);
+        setDiag(null);
+        if (externalText.trim()) {
+          const errorMsg = err?.message ? `JSON 语法错误: ${err.message}` : '译文 JSON 语法错误';
+          setParseError(errorMsg);
+        } else {
+          setParseError(null);
+        }
+      }
+    }
+  }, [externalText, originalData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newText = e.target.value;
@@ -31,8 +54,9 @@ const TranslationJsonInput: React.FC<TranslationJsonInputProps> = ({ originalDat
       setParseError(null);
       setDiag(diagnostics);
       onLoad({ map, rawText: newText, diagnostics });
-    } catch (e) {
-      setParseError('译文 JSON 语法错误');
+    } catch (e: any) {
+      const errorMsg = e?.message ? `JSON 语法错误: ${e.message}` : '译文 JSON 语法错误';
+      setParseError(errorMsg);
       setDiag(null);
     }
   };

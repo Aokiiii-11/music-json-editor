@@ -143,7 +143,7 @@ const TranslationUnit: React.FC<TranslationUnitProps> = ({ label, value, onChang
   const [segmentMode, setSegmentMode] = useState(false); // Toggle for Segmented Editor
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameVal, setRenameVal] = useState(label);
-  
+
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [crossHighlightIndices, setCrossHighlightIndices] = useState<number[]>([]);
 
@@ -155,6 +155,13 @@ const TranslationUnit: React.FC<TranslationUnitProps> = ({ label, value, onChang
   const refCn = referenceCn || '';
   const hasRef = !!refCn;
   const isEqualToRef = hasRef && en === refCn;
+
+  const [editRef, setEditRef] = useState(refCn);
+  useEffect(() => {
+    if (!isEditing) {
+      setEditRef(refCn);
+    }
+  }, [refCn, isEditing]);
 
   // Local state for editing mode
   const [editEn, setEditEn] = useState(en);
@@ -387,14 +394,15 @@ const TranslationUnit: React.FC<TranslationUnitProps> = ({ label, value, onChang
                     />
                   </div>
                   {compareMode==='source_only' ? null : (
-                    <div className="flex-1 p-2 transition-opacity duration-200">
+                  <div className="flex-1 p-2 transition-opacity duration-200">
                       <div className="text-[10px] text-indigo-300 font-mono mb-1 uppercase">Reference</div>
                       <textarea
                         className={`w-full bg-transparent border-none outline-none text-sm text-slate-800 placeholder-indigo-100 resize-none h-full min-h-[80px]`}
-                        value={refCn}
+                        value={editRef}
                         onChange={(e) => {
                           const v = e.target.value;
                           onEditReference && fullPath && onEditReference(fullPath, v);
+                          setEditRef(v);
                         }}
                         placeholder="Translation reference"
                         rows={multiline ? 6 : 2}
@@ -408,7 +416,7 @@ const TranslationUnit: React.FC<TranslationUnitProps> = ({ label, value, onChang
           // --- VIEW MODE (With Interaction) ---
           <div 
              className={`flex flex-col sm:flex-row divide-y sm:divide-y-0 ${compareMode==='source_only' ? '' : 'sm:divide-x'} divide-slate-100 min-h-[60px]`}
-             onDoubleClick={() => { setIsEditing(true); setSegmentMode(true); }}
+             onDoubleClick={() => { setIsEditing(true); setSegmentMode(diffModeEnabled ? false : true); }}
           >
              {/* Left Column (Source) */}
              <div className="flex-1 p-4 bg-slate-50/20 group-hover:bg-slate-50/50 transition-colors">
@@ -561,8 +569,7 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap,
     lowlights: {}
   };
 
-  const translationMapRef = useRef(translationMap);
-  useEffect(() => { translationMapRef.current = translationMap; }, [translationMap]);
+  
 
   const toggleSection = (index: number) => {
     const newSet = new Set(expandedSections);
@@ -697,7 +704,7 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap,
                 value={global.description} 
                 onChange={(val) => updateGlobal('description', val)} 
                 multiline 
-                referenceCn={(translationMapRef.current && translationMapRef.current['global_dimension.description']) || ''}
+                referenceCn={(translationMap && translationMap['global_dimension.description']) || ''}
                 compareMode={compareMode}
                 diffModeEnabled={diffModeEnabled}
                 fullPath={'global_dimension.description'}
@@ -711,7 +718,7 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap,
                 data={global.fact_keywords}
                 onChange={(val) => updateGlobal('fact_keywords', val)}
                 pathPrefix={'global_dimension.fact_keywords'}
-                translationMap={translationMapRef.current || undefined}
+                translationMap={translationMap || undefined}
                 compareMode={compareMode}
                 diffModeEnabled={diffModeEnabled}
                 onRenamePath={onRenamePath}
@@ -727,7 +734,7 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap,
                 onChange={(val) => updateGlobal('highlights', val)}
                 important
                 pathPrefix={'global_dimension.highlights'}
-                translationMap={translationMapRef.current || undefined}
+                translationMap={translationMap || undefined}
                 compareMode={compareMode}
                 diffModeEnabled={diffModeEnabled}
                 onRenamePath={onRenamePath}
@@ -742,7 +749,7 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap,
                 data={global.lowlights}
                 onChange={(val) => updateGlobal('lowlights', val)}
                 pathPrefix={'global_dimension.lowlights'}
-                translationMap={translationMapRef.current || undefined}
+                translationMap={translationMap || undefined}
                 compareMode={compareMode}
                 diffModeEnabled={diffModeEnabled}
                 onRenamePath={onRenamePath}
@@ -838,7 +845,7 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap,
                             value={section.description}
                             onChange={(val) => updateSection(idx, 'description', val)}
                             multiline
-                            referenceCn={(translationMapRef.current && translationMapRef.current[`section_dimension[${idx}].description`]) || ''}
+                            referenceCn={(translationMap && translationMap[`section_dimension[${idx}].description`]) || ''}
                             compareMode={compareMode}
                             diffModeEnabled={diffModeEnabled}
                             fullPath={`section_dimension[${idx}].description`}
@@ -849,7 +856,7 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap,
                             value={section.lyrics}
                             onChange={(val) => updateSection(idx, 'lyrics', val)}
                             multiline
-                            referenceCn={(translationMapRef.current && translationMapRef.current[`section_dimension[${idx}].lyrics`]) || ''}
+                            referenceCn={(translationMap && translationMap[`section_dimension[${idx}].lyrics`]) || ''}
                             compareMode={compareMode}
                             diffModeEnabled={diffModeEnabled}
                             fullPath={`section_dimension[${idx}].lyrics`}
@@ -862,7 +869,7 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap,
                         data={section.keywords}
                         onChange={(val) => updateSection(idx, 'keywords', val)}
                         pathPrefix={`section_dimension[${idx}].keywords`}
-                        translationMap={translationMapRef.current || undefined}
+                        translationMap={translationMap || undefined}
                         compareMode={compareMode}
                         diffModeEnabled={diffModeEnabled}
                         onRenamePath={onRenamePath}
@@ -876,7 +883,7 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap,
                         onChange={(val) => updateSection(idx, 'highlights', val)}
                         important
                         pathPrefix={`section_dimension[${idx}].highlights`}
-                        translationMap={translationMapRef.current || undefined}
+                        translationMap={translationMap || undefined}
                         compareMode={compareMode}
                         diffModeEnabled={diffModeEnabled}
                         onRenamePath={onRenamePath}
@@ -889,7 +896,7 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap,
                         data={section.lowlights}
                         onChange={(val) => updateSection(idx, 'lowlights', val)}
                         pathPrefix={`section_dimension[${idx}].lowlights`}
-                        translationMap={translationMapRef.current || undefined}
+                        translationMap={translationMap || undefined}
                         compareMode={compareMode}
                         diffModeEnabled={diffModeEnabled}
                         onRenamePath={onRenamePath}
@@ -918,7 +925,7 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap,
                     label={p}
                     value={''}
                     onChange={() => {}}
-                    referenceCn={(translationMapRef.current && translationMapRef.current[p]) || ''}
+                    referenceCn={(translationMap && translationMap[p]) || ''}
                     compareMode={compareMode}
                     diffModeEnabled={diffModeEnabled}
                   />
