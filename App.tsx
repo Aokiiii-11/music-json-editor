@@ -5,7 +5,6 @@ import TranslationJsonInput from './components/TranslationJsonInput';
 import { collectStringPaths, getByPath } from './utils/jsonPath';
 import { buildTranslationMapFromJson, diagnoseMatch, TranslationMap } from './utils/matcher';
 import Settings from './components/Settings';
-import ChatBot from './components/ChatBot';
 import { translateJson } from './services/geminiService';
 
 enum AppMode {
@@ -760,7 +759,6 @@ const App: React.FC = () => {
     <div className="flex h-screen bg-slate-50">
       <main className="flex-1 overflow-hidden relative">
         {renderContent()}
-        {mode === AppMode.EDITOR && data && <ChatBot contextData={data} />}
       </main>
     </div>
   );
