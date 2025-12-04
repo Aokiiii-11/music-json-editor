@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MusicData, GlobalDimension, SectionDimension } from '../types';
-import { TranslationMap } from '../utils/matcher';
+import { TranslationMap, diagnoseMatch } from '../utils/matcher';
 import { buildPathKey } from '../utils/jsonPath';
 import { normalizeTimestamp, isValidJsonKeyName } from '../utils/validation';
 
@@ -10,6 +10,7 @@ interface JsonEditorProps {
   translationMap?: TranslationMap;
   compareMode?: 'auto'|'source_only'|'dual';
   diffModeEnabled?: boolean;
+  translationDiag?: ReturnType<typeof diagnoseMatch> | null;
 }
 
 // --- UTILITIES FOR SENTENCE SPLITTING ---
@@ -427,6 +428,24 @@ const DictionaryBlock: React.FC<{
             diffModeEnabled={diffModeEnabled}
           />
         ))}
+        {translationMap && compareMode !== 'source_only' && (
+          Object.keys(translationMap)
+            .filter((k) => k.startsWith(pathPrefix + '.'))
+            .map((k) => k.slice(pathPrefix.length + 1))
+            .filter((extraKey) => !(extraKey in data))
+            .map((extraKey) => (
+              <TranslationUnit
+                key={`__extra__${extraKey}`}
+                label={extraKey}
+                value={''}
+                onChange={(val) => onChange({ ...data, [extraKey]: val })}
+                isImportant={important}
+                referenceCn={(translationMap && translationMap[`${pathPrefix}.${extraKey}`]) || ''}
+                compareMode={compareMode}
+                diffModeEnabled={diffModeEnabled}
+              />
+            ))
+        )}
       </div>
     </div>
   );
@@ -434,7 +453,7 @@ const DictionaryBlock: React.FC<{
 
 // --- MAIN COMPONENT ---
 
-const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap, compareMode, diffModeEnabled }) => {
+const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap, compareMode, diffModeEnabled, translationDiag }) => {
   const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set([0]));
   const [headerEditIndex, setHeaderEditIndex] = useState<number | null>(null);
   const [headerEditId, setHeaderEditId] = useState<string>('');
@@ -764,6 +783,32 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap,
             </div>
           ))}
         </div>
+
+        {compareMode !== 'source_only' && translationDiag && translationDiag.extraPaths && translationDiag.extraPaths.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden animate-fade-in">
+            <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="material-icons text-indigo-400">playlist_add</span>
+                <h2 className="text-lg font-bold">Extra Reference Paths</h2>
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {translationDiag.extraPaths.map((p) => (
+                  <TranslationUnit
+                    key={`__extra_path__${p}`}
+                    label={p}
+                    value={''}
+                    onChange={() => {}}
+                    referenceCn={(translationMapRef.current && translationMapRef.current[p]) || ''}
+                    compareMode={compareMode}
+                    diffModeEnabled={diffModeEnabled}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
