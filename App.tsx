@@ -60,11 +60,22 @@ const App: React.FC = () => {
   const [isTransCollapsed, setIsTransCollapsed] = useState(false);
   const [transHeight, setTransHeight] = useState<number>(180);
   const transHeightRef = useRef(transHeight);
+  const [viewMode, setViewMode] = useState<'auto'|'source_only'|'dual'>('auto');
+  const [diffModeEnabled, setDiffModeEnabled] = useState<boolean>(false);
 
   // Translation (Reference) State
   const [translationJsonText, setTranslationJsonText] = useState('');
   const [translationMap, setTranslationMap] = useState<TranslationMap>({});
   const [translationDiag, setTranslationDiag] = useState<ReturnType<typeof diagnoseMatch> | null>(null);
+  const effectiveMode = React.useMemo<'source_only'|'dual'>(() => {
+    if (viewMode !== 'auto') return viewMode === 'source_only' ? 'source_only' : 'dual';
+    if (data && !translationJsonText.trim() && (!translationMap || Object.keys(translationMap).length === 0)) return 'source_only';
+    if (data && translationJsonText.trim() && translationDiag) return 'dual';
+    return 'dual';
+  }, [viewMode, data, translationJsonText, translationMap, translationDiag]);
+  // Undo/Redo History
+  const [past, setPast] = useState<MusicData[]>([]);
+  const [future, setFuture] = useState<MusicData[]>([]);
 
   const extractBilingual = (root: any): { original: any; map: TranslationMap } => {
     const map: TranslationMap = {};
@@ -186,6 +197,8 @@ const App: React.FC = () => {
     try {
       const parsed = JSON.parse(newText);
       const { original, map } = extractBilingual(parsed);
+      setPast((prev) => (data ? [...prev, data] : prev));
+      setFuture([]);
       setData(original);
       setTranslationMap(map);
       setTranslationDiag(diagnoseMatch(original, map && Object.keys(map).length ? parsed : original));
@@ -200,11 +213,12 @@ const App: React.FC = () => {
 
   // 2. Handle Visual Editor Change (Bottom Window)
   const handleVisualChange = useCallback((newData: MusicData) => {
+    setPast((prev) => (data ? [...prev, data] : prev));
+    setFuture([]);
     setData(newData);
-    // Sync back to text
     setJsonText(JSON.stringify(newData, null, 2));
     setLastUpdated(new Date());
-  }, []);
+  }, [data]);
 
   // 3. Auto Translate
   const handleTranslate = async () => {
@@ -334,6 +348,8 @@ const App: React.FC = () => {
       // Update text to be pretty
       setJsonText(JSON.stringify(original, null, 2));
       // Ensure data is set
+      setPast((prev) => (data ? [...prev, data] : prev));
+      setFuture([]);
       setData(original);
       setTranslationMap(map);
       setParseError(null);
@@ -504,6 +520,46 @@ const App: React.FC = () => {
                     </span>
                 </div>
                 <button
+                  onClick={() => {
+                    if (!past.length || !data) return;
+                    const prev = past[past.length - 1];
+                    setPast(past.slice(0, -1));
+                    setFuture([...future, data]);
+                    setData(prev);
+                    setJsonText(JSON.stringify(prev, null, 2));
+                    setLastUpdated(new Date());
+                  }}
+                  disabled={!past.length || !data}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold border transition-colors ${
+                    !past.length || !data
+                      ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                      : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                  }`}
+                  title="撤回 (Cmd/Ctrl+Z)"
+                >
+                  <span className="material-icons text-base">undo</span>
+                </button>
+                <button
+                  onClick={() => {
+                    if (!future.length || !data) return;
+                    const next = future[future.length - 1];
+                    setFuture(future.slice(0, -1));
+                    setPast([...past, data]);
+                    setData(next);
+                    setJsonText(JSON.stringify(next, null, 2));
+                    setLastUpdated(new Date());
+                  }}
+                  disabled={!future.length || !data}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold border transition-colors ${
+                    !future.length || !data
+                      ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                      : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                  }`}
+                  title="取消撤回 (Shift+Cmd/Ctrl+Z)"
+                >
+                  <span className="material-icons text-base">redo</span>
+                </button>
+                <button
                   onClick={toggleRawPane}
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold border transition-colors ${isRawCollapsed ? 'bg-indigo-600 text-white border-indigo-500 hover:bg-indigo-500' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'}`}
                   title={isRawCollapsed ? '展开原始 JSON' : '收起原始 JSON'}
@@ -525,12 +581,34 @@ const App: React.FC = () => {
 
             <div className="flex items-center gap-2">
                 <button 
-                  onClick={() => setMode(AppMode.SETTINGS)}
-                  className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors mr-2 flex items-center gap-1"
-                  title="Settings"
+                    onClick={() => setMode(AppMode.SETTINGS)}
+                    className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors mr-2 flex items-center gap-1"
+                    title="Settings"
                 >
                     <span className="material-icons">settings</span>
                 </button>
+                <div className="flex items-center gap-2 px-2 py-1 bg-slate-100 text-slate-700 rounded-lg border border-slate-200">
+                  <span className="text-xs font-semibold">Compare Mode</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-white border border-slate-300">
+                    {viewMode === 'auto' ? (effectiveMode === 'source_only' ? 'Auto·原文' : 'Auto·双语') : (viewMode === 'source_only' ? '原文' : '双语')}
+                  </span>
+                  <button
+                    onClick={() => setViewMode(viewMode === 'auto' ? 'source_only' : (viewMode === 'source_only' ? 'dual' : 'auto'))}
+                    className="px-2 py-1 text-xs font-medium bg-white border border-slate-300 rounded hover:bg-slate-50"
+                    title="切换对照模式"
+                  >
+                    Toggle
+                  </button>
+                  <div className="w-px h-4 bg-slate-300 mx-1"></div>
+                  <span className="text-xs font-semibold">Diff 模式</span>
+                  <button
+                    onClick={() => setDiffModeEnabled(!diffModeEnabled)}
+                    className={`px-2 py-1 text-xs font-medium rounded border ${diffModeEnabled ? 'bg-indigo-600 text-white border-indigo-500 hover:bg-indigo-500' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'}`}
+                    title="开启/关闭 Diff 模式"
+                  >
+                    {diffModeEnabled ? 'On' : 'Off'}
+                  </button>
+                </div>
                 
                 <button 
                     onClick={handleTranslate}
@@ -629,7 +707,13 @@ const App: React.FC = () => {
             )}
             
             {data ? (
-               <JsonEditor data={data} onChange={handleVisualChange} translationMap={translationMap} />
+               <JsonEditor 
+                 data={data} 
+                 onChange={handleVisualChange} 
+                 translationMap={effectiveMode === 'dual' ? translationMap : undefined}
+                 compareMode={effectiveMode}
+                 diffModeEnabled={diffModeEnabled}
+               />
             ) : (
                <div className="h-full flex flex-col items-center justify-center text-slate-400">
                   <span className="material-icons text-6xl mb-4 text-slate-300">code_off</span>
@@ -640,6 +724,37 @@ const App: React.FC = () => {
       </div>
     );
   };
+
+  // Keyboard shortcuts for Undo/Redo
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const isUndo = (e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z';
+      const isRedo = (e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'z';
+      if (isUndo) {
+        e.preventDefault();
+        if (past.length && data) {
+          const prev = past[past.length - 1];
+          setPast(past.slice(0, -1));
+          setFuture([...future, data]);
+          setData(prev);
+          setJsonText(JSON.stringify(prev, null, 2));
+          setLastUpdated(new Date());
+        }
+      } else if (isRedo) {
+        e.preventDefault();
+        if (future.length && data) {
+          const next = future[future.length - 1];
+          setFuture(future.slice(0, -1));
+          setPast([...past, data]);
+          setData(next);
+          setJsonText(JSON.stringify(next, null, 2));
+          setLastUpdated(new Date());
+        }
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [past, future, data]);
 
   return (
     <div className="flex h-screen bg-slate-50">

@@ -84,7 +84,7 @@ const TranslationJsonInput: React.FC<TranslationJsonInputProps> = ({ originalDat
       <div className="flex items-center justify-between px-4 py-2 bg-slate-50 border-b border-slate-200">
         <div className="flex items-center gap-2">
           <span className="material-icons text-indigo-400">translate</span>
-          <span className="text-slate-700 font-mono text-xs font-bold">中文译文 JSON (参考)</span>
+          <span className="text-slate-700 font-mono text-xs font-bold">译文/参考 JSON</span>
           {parseError && (
             <span className="text-xs bg-red-500/20 text-red-600 px-2 py-0.5 rounded">{parseError}</span>
           )}

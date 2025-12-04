@@ -2,11 +2,14 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MusicData, GlobalDimension, SectionDimension } from '../types';
 import { TranslationMap } from '../utils/matcher';
 import { buildPathKey } from '../utils/jsonPath';
+import { normalizeTimestamp, isValidJsonKeyName } from '../utils/validation';
 
 interface JsonEditorProps {
   data: MusicData;
   onChange: (newData: MusicData) => void;
   translationMap?: TranslationMap;
+  compareMode?: 'auto'|'source_only'|'dual';
+  diffModeEnabled?: boolean;
 }
 
 // --- UTILITIES FOR SENTENCE SPLITTING ---
@@ -119,13 +122,15 @@ interface TranslationUnitProps {
   isImportant?: boolean;
   id?: string;
   referenceCn?: string;
+  compareMode?: 'auto'|'source_only'|'dual';
+  diffModeEnabled?: boolean;
 }
 
 /**
  * The core component for editing a Bilingual pair.
  * Handles the "En | Cn" logic, View/Edit toggle, Hover sync, Selection sync, and Segmented Editing.
  */
-const TranslationUnit: React.FC<TranslationUnitProps> = ({ label, value, onChange, multiline, isImportant, id, referenceCn }) => {
+const TranslationUnit: React.FC<TranslationUnitProps> = ({ label, value, onChange, multiline, isImportant, id, referenceCn, compareMode, diffModeEnabled }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [segmentMode, setSegmentMode] = useState(false); // Toggle for Segmented Editor
   
@@ -138,6 +143,8 @@ const TranslationUnit: React.FC<TranslationUnitProps> = ({ label, value, onChang
   const en = parts[0]?.trim() || '';
   const cn = parts.length > 1 ? parts.slice(1).join('|').trim() : '';
   const refCn = referenceCn || '';
+  const hasRef = !!refCn;
+  const isEqualToRef = hasRef && en === refCn;
 
   // Local state for editing mode
   const [editEn, setEditEn] = useState(en);
@@ -230,11 +237,16 @@ const TranslationUnit: React.FC<TranslationUnitProps> = ({ label, value, onChang
            <span className={`text-xs font-bold uppercase tracking-wider ${isImportant ? 'text-indigo-600' : 'text-slate-500'}`}>
              {label}
            </span>
-           {!isEditing && isMissingTranslation && (
-             <span className="flex items-center gap-1 text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-medium">
-               <span className="material-icons text-[10px]">warning</span> Missing Translation
-             </span>
-           )}
+          {!isEditing && diffModeEnabled && compareMode !== 'source_only' && hasRef && (
+            <span className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-medium ${isEqualToRef ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+              {isEqualToRef ? '✓' : '≠'}
+            </span>
+          )}
+          {!isEditing && isMissingTranslation && compareMode !== 'source_only' && !diffModeEnabled && (
+            <span className="flex items-center gap-1 text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-medium">
+              <span className="material-icons text-[10px]">warning</span> Missing Reference
+            </span>
+          )}
         </div>
         
         <div className="flex items-center gap-2">
@@ -308,7 +320,7 @@ const TranslationUnit: React.FC<TranslationUnitProps> = ({ label, value, onChang
                </div>
             ) : (
                // RAW TEXT MODE
-               <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+               <div className={`flex flex-col sm:flex-row divide-y sm:divide-y-0 ${compareMode==='source_only' ? '' : 'sm:divide-x'} divide-slate-100`}>
                   <div className="flex-1 p-2 bg-slate-50/30">
                     <div className="flex justify-between items-center mb-1">
                       <div className="text-[10px] text-slate-400 font-mono uppercase">English Source</div>
@@ -325,24 +337,26 @@ const TranslationUnit: React.FC<TranslationUnitProps> = ({ label, value, onChang
                       autoFocus
                     />
                   </div>
-                  <div className="flex-1 p-2">
-                    <div className="text-[10px] text-indigo-300 font-mono mb-1 uppercase">Chinese Translation (Reference)</div>
-                    <textarea
-                      className={`w-full bg-transparent border-none outline-none text-sm text-slate-800 placeholder-indigo-100 resize-none h-full min-h-[80px]`}
-                      value={refCn || editCn}
-                      onChange={() => {}}
-                      placeholder="Translation (reference only)"
-                      rows={multiline ? 6 : 2}
-                      disabled
-                    />
-                  </div>
+                  {compareMode==='source_only' ? null : (
+                    <div className="flex-1 p-2 transition-opacity duration-200">
+                      <div className="text-[10px] text-indigo-300 font-mono mb-1 uppercase">Reference（只读）</div>
+                      <textarea
+                        className={`w-full bg-transparent border-none outline-none text-sm text-slate-800 placeholder-indigo-100 resize-none h-full min-h-[80px]`}
+                        value={refCn || editCn}
+                        onChange={() => {}}
+                        placeholder="Translation (reference only)"
+                        rows={multiline ? 6 : 2}
+                        disabled
+                      />
+                    </div>
+                  )}
                </div>
             )}
           </>
         ) : (
           // --- VIEW MODE (With Interaction) ---
           <div 
-             className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-slate-100 min-h-[60px]"
+             className={`flex flex-col sm:flex-row divide-y sm:divide-y-0 ${compareMode==='source_only' ? '' : 'sm:divide-x'} divide-slate-100 min-h-[60px]`}
              onDoubleClick={() => { setIsEditing(true); setSegmentMode(true); }}
           >
              {/* Left Column (Source) */}
@@ -358,20 +372,22 @@ const TranslationUnit: React.FC<TranslationUnitProps> = ({ label, value, onChang
              </div>
 
              {/* Right Column (Target) */}
-             <div className="flex-1 p-4 group-hover:bg-indigo-50/5 transition-colors">
-                {(cn || refCn) ? (
-                  <InteractiveText 
-                    text={cn || refCn} 
-                    isSource={false} 
-                    hoverIndex={hoverIndex} 
-                    onHover={setHoverIndex}
-                    highlightIndices={crossHighlightIndices} 
-                    onSelection={handleTargetSelection}
-                  />
-                ) : (
-                  <span className="text-slate-300 text-sm italic select-none">No translation provided...</span>
-                )}
-             </div>
+             {compareMode==='source_only' ? null : (
+               <div className="flex-1 p-4 group-hover:bg-indigo-50/5 transition-colors transition-opacity duration-200">
+                  {(cn || refCn) ? (
+                    <InteractiveText 
+                      text={cn || refCn} 
+                      isSource={false} 
+                      hoverIndex={hoverIndex} 
+                      onHover={setHoverIndex}
+                      highlightIndices={crossHighlightIndices} 
+                      onSelection={handleTargetSelection}
+                    />
+                  ) : (
+                    <span className="text-slate-300 text-sm italic select-none">No translation provided...</span>
+                  )}
+               </div>
+             )}
           </div>
         )}
       </div>
@@ -388,7 +404,9 @@ const DictionaryBlock: React.FC<{
   important?: boolean;
   pathPrefix: string;
   translationMap?: TranslationMap;
-  }[]> = ({ data, onChange, title, important, pathPrefix, translationMap }) => {
+  compareMode?: 'auto'|'source_only'|'dual';
+  diffModeEnabled?: boolean;
+  }[]> = ({ data, onChange, title, important, pathPrefix, translationMap, compareMode, diffModeEnabled }) => {
   if (!data) return null;
 
   return (
@@ -405,6 +423,8 @@ const DictionaryBlock: React.FC<{
             onChange={(val) => onChange({ ...data, [key]: val })}
             isImportant={important}
             referenceCn={(translationMap && translationMap[`${pathPrefix}.${key}`]) || ''}
+            compareMode={compareMode}
+            diffModeEnabled={diffModeEnabled}
           />
         ))}
       </div>
@@ -414,8 +434,12 @@ const DictionaryBlock: React.FC<{
 
 // --- MAIN COMPONENT ---
 
-const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap }) => {
+const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap, compareMode, diffModeEnabled }) => {
   const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set([0]));
+  const [headerEditIndex, setHeaderEditIndex] = useState<number | null>(null);
+  const [headerEditId, setHeaderEditId] = useState<string>('');
+  const [headerEditTs, setHeaderEditTs] = useState<string>('');
+  const [headerError, setHeaderError] = useState<string>('');
   const sections: SectionDimension[] = data.section_dimension ?? [];
   const global: GlobalDimension = data.global_dimension ?? {
     description: '',
@@ -445,6 +469,34 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap 
     const newSections = [...sections];
     newSections[index] = { ...newSections[index], [key]: val };
     onChange({ ...data, section_dimension: newSections });
+  };
+
+  const startHeaderEdit = (index: number) => {
+    setHeaderEditIndex(index);
+    setHeaderEditId(sections[index]?.id || '');
+    setHeaderEditTs(sections[index]?.timestamp || '');
+    setHeaderError('');
+  };
+
+  const cancelHeaderEdit = () => {
+    setHeaderEditIndex(null);
+    setHeaderEditId('');
+    setHeaderEditTs('');
+    setHeaderError('');
+  };
+
+  const saveHeaderEdit = () => {
+    if (headerEditIndex === null) return;
+    const id = headerEditId.trim();
+    if (!isValidJsonKeyName(id)) {
+      setHeaderError('Invalid section name');
+      return;
+    }
+    const norm = normalizeTimestamp(headerEditTs);
+    if (!norm) { setHeaderError('Invalid timestamp'); return; }
+    updateSection(headerEditIndex, 'id', id);
+    updateSection(headerEditIndex, 'timestamp', norm);
+    cancelHeaderEdit();
   };
 
   // --- NAVIGATION HELPER ---
@@ -533,6 +585,8 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap 
                 onChange={(val) => updateGlobal('description', val)} 
                 multiline 
                 referenceCn={(translationMapRef.current && translationMapRef.current['global_dimension.description']) || ''}
+                compareMode={compareMode}
+                diffModeEnabled={diffModeEnabled}
               />
             </div>
 
@@ -543,6 +597,8 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap 
                 onChange={(val) => updateGlobal('fact_keywords', val)}
                 pathPrefix={'global_dimension.fact_keywords'}
                 translationMap={translationMapRef.current || undefined}
+                compareMode={compareMode}
+                diffModeEnabled={diffModeEnabled}
                 />
             </div>
 
@@ -554,6 +610,8 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap 
                 important
                 pathPrefix={'global_dimension.highlights'}
                 translationMap={translationMapRef.current || undefined}
+                compareMode={compareMode}
+                diffModeEnabled={diffModeEnabled}
                 />
             </div>
 
@@ -564,6 +622,8 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap 
                 onChange={(val) => updateGlobal('lowlights', val)}
                 pathPrefix={'global_dimension.lowlights'}
                 translationMap={translationMapRef.current || undefined}
+                compareMode={compareMode}
+                diffModeEnabled={diffModeEnabled}
                 />
             </div>
           </div>
@@ -581,25 +641,69 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap 
               style={{ animationDelay: `${idx * 50}ms` }}
             >
                 <div 
-                  className="flex items-center justify-between px-6 py-4 cursor-pointer hover:bg-slate-50 transition-colors select-none"
-                  onClick={() => toggleSection(idx)}
+                  className="flex items-center justify-between px-6 py-4 hover:bg-slate-50 transition-colors select-none"
                 >
                   <div className="flex items-center gap-4">
                       <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-bold">
                         {idx + 1}
                       </div>
                       <div>
-                        <div className="flex items-center gap-2">
+                        {headerEditIndex === idx ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              className={`text-sm font-bold px-2 py-1 rounded border ${headerError && !isValidJsonKeyName(headerEditId.trim()) ? 'border-red-400 bg-red-50' : 'border-slate-200 bg-white'} text-slate-800 w-48`}
+                              value={headerEditId}
+                              onChange={(e) => setHeaderEditId(e.target.value)}
+                              placeholder="Section Name"
+                            />
+                            <input
+                              className={`text-xs font-mono px-2 py-1 rounded border ${headerError && headerEditTs ? 'border-red-400 bg-red-50' : 'border-slate-200 bg-white'} text-slate-700 w-40`}
+                              value={headerEditTs}
+                              onChange={(e) => setHeaderEditTs(e.target.value)}
+                              placeholder="mm:ss[-mm:ss]"
+                            />
+                            <button
+                              onClick={(e) => { e.stopPropagation(); saveHeaderEdit(); }}
+                              className="text-xs font-medium px-2 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); cancelHeaderEdit(); }}
+                              className="text-xs font-medium px-2 py-1 rounded text-slate-500 hover:bg-slate-100"
+                            >
+                              Cancel
+                            </button>
+                            {headerError && (
+                              <span className="text-[10px] text-red-500 font-medium">{headerError}</span>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
                             <span className="font-bold text-slate-800 text-sm">Section ID: {section.id || 'N/A'}</span>
                             <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-mono">
                               {section.timestamp || '00:00'}
                             </span>
-                        </div>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); startHeaderEdit(idx); }}
+                              className="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50"
+                              title="Edit header"
+                            >
+                              <span className="material-icons text-sm">edit</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                   </div>
-                  <span className={`material-icons text-slate-400 transition-transform duration-300 ${expandedSections.has(idx) ? 'rotate-180' : ''}`}>
+                  <button
+                    onClick={() => toggleSection(idx)}
+                    className="p-1 rounded hover:bg-slate-100"
+                    title={expandedSections.has(idx) ? 'Collapse' : 'Expand'}
+                  >
+                    <span className={`material-icons text-slate-400 transition-transform duration-300 ${expandedSections.has(idx) ? 'rotate-180' : ''}`}>
                       expand_more
-                  </span>
+                    </span>
+                  </button>
                 </div>
 
                 {expandedSections.has(idx) && (
@@ -611,6 +715,8 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap 
                             onChange={(val) => updateSection(idx, 'description', val)}
                             multiline
                             referenceCn={(translationMapRef.current && translationMapRef.current[`section_dimension[${idx}].description`]) || ''}
+                            compareMode={compareMode}
+                            diffModeEnabled={diffModeEnabled}
                         />
                         <TranslationUnit 
                             label="Lyrics / Content"
@@ -618,6 +724,8 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap 
                             onChange={(val) => updateSection(idx, 'lyrics', val)}
                             multiline
                             referenceCn={(translationMapRef.current && translationMapRef.current[`section_dimension[${idx}].lyrics`]) || ''}
+                            compareMode={compareMode}
+                            diffModeEnabled={diffModeEnabled}
                         />
                       </div>
 
@@ -627,6 +735,8 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap 
                         onChange={(val) => updateSection(idx, 'keywords', val)}
                         pathPrefix={`section_dimension[${idx}].keywords`}
                         translationMap={translationMapRef.current || undefined}
+                        compareMode={compareMode}
+                        diffModeEnabled={diffModeEnabled}
                       />
 
                       <DictionaryBlock 
@@ -636,6 +746,8 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap 
                         important
                         pathPrefix={`section_dimension[${idx}].highlights`}
                         translationMap={translationMapRef.current || undefined}
+                        compareMode={compareMode}
+                        diffModeEnabled={diffModeEnabled}
                       />
                       
                       <DictionaryBlock 
@@ -644,6 +756,8 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ data, onChange, translationMap 
                         onChange={(val) => updateSection(idx, 'lowlights', val)}
                         pathPrefix={`section_dimension[${idx}].lowlights`}
                         translationMap={translationMapRef.current || undefined}
+                        compareMode={compareMode}
+                        diffModeEnabled={diffModeEnabled}
                       />
                   </div>
                 )}
