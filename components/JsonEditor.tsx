@@ -313,7 +313,7 @@ const TranslationUnit: React.FC<TranslationUnitProps> = ({ label, value, onChang
                if (isEditing) handleSave();
                else {
                    setIsEditing(true);
-                   setSegmentMode(true); // Default to Segment Mode when opening
+                   setSegmentMode(diffModeEnabled ? false : true);
                }
             }}
             className={`text-xs font-medium px-2 py-1 rounded transition-colors ${
